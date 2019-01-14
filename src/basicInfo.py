@@ -6,10 +6,12 @@ from sympy import *
 
 # reads a graph input file
 def readGraph(fpath, gname):
+    print('loading graph...')
     return gg.GraphFromFile(fpath, gname).G
 
 # generate all basic infomation
 def loadInfo(g, phi, rational = False):
+    print('generate basic info...')
     # if using rational number to handle division
     g.rat = rational
 
@@ -52,6 +54,7 @@ def loadInfo(g, phi, rational = False):
     # the domain boundary info (a and b)
     g.a = {}
     g.b = {}
+    g.d_max = 0
     for e in g.edges():
         for f in g.edges():
             get_ab(e, f, g)
@@ -100,16 +103,23 @@ def get_ab(e, f, g):
         g.a[(e, e, 1, 1)] = duv
 
         for (i,j) in g.two2:
-            g.b[(e, f, i, j)] = (duv + le) / 2
+            bval = (duv + le) / 2
+            g.b[(e, f, i, j)] = bval
+
+            if bval > g.d_max:
+                g.d_max = bval
     else:
         le = g.l[e]
         lf = g.l[f]
 
         for (i,j) in g.two2:
             g.a[e, f, i, j] = g.d[e[i]][f[j]]
-            g.b[e, f, i, j] = (le + lf + 
+            bval = (le + lf + 
                     min(g.d[e[0]][f[0]] + g.d[e[1]][f[1]], 
                         g.d[e[0]][f[1]] + g.d[e[1]][f[0]])) / 2
+            g.b[e, f, i, j] = bval
+            if bval > g.d_max:
+                g.d_max = bval
 
 # get p1 p2 q1 q2
 def get_pq_const(e, f, g):

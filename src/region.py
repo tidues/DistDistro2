@@ -9,7 +9,7 @@ class RegionBase:
     # sgn: remove or add;
     # eta: a gate function to control the support
     # a, b: the eta function bounds
-    def __init__(self, pl, pu, ql, qu, sgn=1, eta=False, a=0, b=float('inf'), xval=x):
+    def __init__(self, pl, pu, ql, qu, sgn=1, eta=False, a=0, b=oo, xval=x):
         zero = numbers.Zero()
         self.pl = cf.toSym(pl)
         self.pu = cf.toSym(pu)

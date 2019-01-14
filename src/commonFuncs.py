@@ -12,10 +12,11 @@ class eta(Function):
     @classmethod
     def eval(cls, a, b, x):
         if a.is_Number and b.is_Number and x.is_Number:
+            zero = numbers.Zero()
             if x >= a and x <=b:
-                return 1
+                return 1 + zero
             else:
-                return 0
+                return 0 + zero
 
 # symbolic theshold function
 #theta = lambda a, b, x: Piecewise((a, x < a), (b, x > b), (x, True))
@@ -130,3 +131,9 @@ def rat(val, rational):
         return float(val)
     else:
         return Rational(val)
+
+
+if __name__ == '__main__':
+    from sympy.plotting import plot
+    
+    plot(eta(1, oo, x), (x, -1, 5))

@@ -1,13 +1,16 @@
 from enums import Stats
 import commonFuncs as cf
 from sympy import *
+from sympy.abc import p, q, x
+from sympy.plotting import plot
+from plot import plot1d
 
 class Formula:
     def __init__(self, g):
         self.g = g
         self.f = None
-        #self.modules = ['numpy', {'theta': cf.theta, 'eta': cf.eta}]
-        self.expr = None
+        self.f_lambda = None
+        self.mods = ['numpy', {'theta': cf.theta, 'eta': cf.eta}]
 
     def __gen_formula(self):
         # realized by the inherited classes
@@ -17,6 +20,27 @@ class Formula:
         # realized by the inherited classes
         pass
 
+    def formula(self):
+        if self.stat != Stats.MOMENT:
+            print(self.f)
+        else:
+            print('moment function has no symbolic formula.')
+
+    def plot(self, method=0, step=0.1):
+        if self.stat != Stats.MOMENT:
+            if method == 0:
+                try:
+                    plot(self.f, (x, -1, self.g.d_max + 1))
+                except:
+                    self.plot(method=1, step=step)
+            else:
+                self.f_lambda = lambdify(x, self.f, modules=self.mods)
+                plot1d(self.f_lambda, -1, self.g.d_max + 1, step)
+        else:
+            print('moment function cannot be plotted.')
+
+
+
 class Moment(Formula):
     def __init__(self, g):
         self.stat = Stats.MOMENT
@@ -24,6 +48,7 @@ class Moment(Formula):
         self.__gen_formula()
 
     def __gen_formula(self):
+        print('generating the moment function...')
         def moment(k):
             res = 0
             alphas = cf.A_curl(2, k)
@@ -45,8 +70,8 @@ class Moment(Formula):
                                     c1 = (-1) ** w
 
                                 c = c0 * c1
-                                q = Symbol('q')
-                                p = Symbol('p')
+                                # q = Symbol('q')
+                                # p = Symbol('p')
                                 expr = q ** alpha[0] * p ** alpha[1] * g.phi
                                 m = g.R[e, f, i, j].m(expr)
                                 g.moment_info[e, f, i, j, alpha] = c * m
@@ -74,8 +99,10 @@ class CDF(Formula):
         self.__gen_formula()
 
     def __gen_formula(self):
+        print('generating the cdf...')
+
         g = self.g
-        x = Symbol('x')
+        # x = Symbol('x')
         expr = 0
 
         for e in g.edges():
@@ -90,7 +117,7 @@ class CDF(Formula):
         self.f = expand(expr)
 
     def eval(self, x_val):
-        x = Symbol('x')
+        # x = Symbol('x')
         return self.f.subs(x, x_val)
 
 
@@ -101,46 +128,48 @@ class PDF(Formula):
         self.__gen_formula()
 
     def __gen_formula(self):
-        x = Symbol('x')
-        p = Symbol('p')
-        q = Symbol('q')
+        print('generating the pdf...')
+        # x = Symbol('x')
+        # p = Symbol('p')
+        # q = Symbol('q')
         g = self.g
         expr = 0
 
-        mat_D = {}
+        # mat_D = {}
         for e in g.edges():
             for f in g.edges():
                 const = g.gx[e] * g.gy[f] / g.l[f]
                 tmp = 0
-                mxs = {}
+                # mxs = {}
                 for (i, j) in g.two2:
                     c = cf.eta(g.a[e, f, i, j], g.b[e, f, i, j], x)
                     phis = g.phi.subs(q, g.q[e, f, i, j])
                     m = g.L[e, f, i, j].m(phis)
                     tmp += c * m
-                    print((e, f, i, j))
-                    print('c:\t', c)
-                    print('phis:\t', phis)
-                    print('m:\t', m)
-                    print('L:\t')
-                    g.L[e, f, i, j].print()
-                    mxs[i, j] = (c * m / g.l[f]).subs(x, 3)
+
+                    # print((e, f, i, j))
+                    # print('c:\t', c)
+                    # print('phis:\t', phis)
+                    # print('m:\t', m)
+                    # print('L:\t')
+                    # g.L[e, f, i, j].print()
+                    # mxs[i, j] = (c * m / g.l[f]).subs(x, 3)
                     
-                if e == ('1','2') and f == ('2', '3'):
-                    print('mxs2:', mxs)
+                # if e == ('1','2') and f == ('2', '3'):
+                #     print('mxs2:', mxs)
 
                     
 
-                mat_D[e, f] = (tmp / g.l[f])
+                # mat_D[e, f] = (tmp / g.l[f])
 
                 expr += const * tmp
 
-        self.mat_D = mat_D
+        # self.mat_D = mat_D
         self.f = expand(expr)
         #self.f = lambdify(x, self.expr, modules=self.modules)
 
     def eval(self, x_val):
-        x = Symbol('x')
+        # x = Symbol('x')
         return self.f.subs(x, x_val)
 
 
