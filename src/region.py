@@ -9,7 +9,10 @@ class RegionBase:
     # sgn: remove or add;
     # eta: a gate function to control the support
     # a, b: the eta function bounds
-    def __init__(self, pl, pu, ql, qu, sgn=1, eta=False, a=0, b=oo, xval=x):
+    # bd: indicate whether the corresponding boundary 
+    #     (just pl, pu for now) is included
+    #       in the region
+    def __init__(self, pl, pu, ql, qu, sgn=1, eta=False, a=0, b=oo, xval=x, bd=(True, True)):
         zero = numbers.Zero()
         self.pl = cf.toSym(pl)
         self.pu = cf.toSym(pu)
@@ -24,6 +27,7 @@ class RegionBase:
         self.a = a
         self.b = b
         self.xval = xval
+        self.bd = bd
         # self.modules = ['numpy']
 
     # the mass function
@@ -44,7 +48,15 @@ class RegionBase:
 
     # conditional mass function
     def m_p(self, f):
-        return cf.eta(self.pl, self.pu, p) * integrate(f, (q, self.ql, self.qu))
+        myeta = None
+        if self.bd[0] is False:
+            myeta = cf.etal
+        elif self.bd[1] is False:
+            myeta = cf.etar
+        else:
+            myeta = cf.eta
+
+        return myeta(self.pl, self.pu, p) * integrate(f, (q, self.ql, self.qu))
 
     # conditional adjusted mass function
     def m_p_adj(self, f):

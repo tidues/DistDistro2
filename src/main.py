@@ -14,14 +14,14 @@ switches = {
         Stats.CDF: 0,
         Stats.PDF: 0,
         Stats.CMOMENT: 0,
-        Stats.CCDF: 1,
-        Stats.CPDF: 0,
+        Stats.CCDF: 0,
+        Stats.CPDF: 1,
         Stats.SIMULATION: 0
         }
 
 # graph file
 fpath = '../data/'
-gname = 'g3'
+gname = 'g0'
 
 # read graph
 g = bi.readGraph(fpath, gname)
@@ -89,47 +89,23 @@ if switches[Stats.CMOMENT] == 1:
 if switches[Stats.CCDF] == 1:
     e = ('1', '2')
     f = ('2', '3')
-    print(g.p1[('1', '2'), ('2', '3')])
-    print(g.p2[('1', '2'), ('2', '3')])
-    print(g.q1[('1', '2'), ('2', '3')])
-    print(g.q2[('1', '2'), ('2', '3')])
-    for (i, j) in g.two2:
-        print(g.d[e[i]][f[j]])
     ccdf = fl.CCDF(g)
-    print(ccdf.eval(('1', '2'), 0, 0))
-    print(ccdf.eval(('1', '2'), 0, 2))
-    print(ccdf.eval(('1', '2'), 0, 5))
-    print(ccdf.formula(('1', '2')))
-    ccdf.plot(('1', '2'), 0)
-    print(ccdf.eval(('1', '2'), 0.5, 0))
-    print(ccdf.eval(('1', '2'), 0.5, 2))
-    print(ccdf.eval(('1', '2'), 0.5, 5))
-    ccdf.plot(('1', '2'), 0.5)
-    print(ccdf.eval(('1', '2'), 1, 0))
-    print(ccdf.eval(('1', '2'), 1, 2))
-    print(ccdf.eval(('1', '2'), 1, 5))
-    ccdf.plot(('1', '2'), 1)
+    ccdf.plot(e, 0)
+    ccdf.plot(e, 0.2)
+    ccdf.plot(e, 0.4)
+    ccdf.plot(e, 0.5)
+    ccdf.plot(e, 0.8)
+    ccdf.plot(e, 1)
 
 # conditional pdf
 if switches[Stats.CPDF] == 1:
-    print(g.p1[('1', '2'), ('2', '3')])
-    print(g.p2[('1', '2'), ('2', '3')])
-    print(g.q1[('1', '2'), ('2', '3')])
-    print(g.q2[('1', '2'), ('2', '3')])
+    e = ('1', '2')
+    f = ('2', '3')
     cpdf = fl.CPDF(g)
-    print(cpdf.eval(('1', '2'), 0, 0))
-    print(cpdf.eval(('1', '2'), 0, 2))
-    print(cpdf.eval(('1', '2'), 0, 5))
-    cpdf.plot(('1', '2'), 0)
-    print(cpdf.eval(('1', '2'), 0.5, 0))
-    print(cpdf.eval(('1', '2'), 0.5, 2))
-    print(cpdf.eval(('1', '2'), 0.5, 5))
-    cpdf.plot(('1', '2'), 0.5)
-    print(cpdf.eval(('1', '2'), 1, 0))
-    print(cpdf.eval(('1', '2'), 1, 2))
-    print(cpdf.eval(('1', '2'), 1, 5))
-    cpdf.plot(('1', '2'), 1)
-
+    plst = [0, 0.2, 0.4, 0.5, 0.8, 1]
+    for p in plst:
+        cpdf.plot(e, p)
+        print(nf.pdf_check(cpdf.formula(e, p), (x, 0, g.d_max)))
 
 
 

@@ -8,6 +8,20 @@ def eta(a, b, x):
     else:
         return 0
 
+# numeric gate function
+def etal(a, b, x):
+    if x > a and x <= b:
+        return 1
+    else:
+        return 0
+
+# numeric gate function
+def etar(a, b, x):
+    if x >= a and x < b:
+        return 1
+    else:
+        return 0
+
 # numeric threshold function
 def theta(a, b, x):
     if x < a:
@@ -23,7 +37,7 @@ def theta(a, b, x):
 # the non-neg need to be guarenteed manually
 # only support at most 2-dim input function
 def pdf_check(expr, range1, range2=None):
-    mods = ['numpy', {'theta': theta, 'eta': eta}]
+    mods = ['numpy', {'theta': theta, 'eta': eta, 'etal': etal, 'etar': etar}]
 
     x = range1[0]
     region = [range1[1], range1[2]]

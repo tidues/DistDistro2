@@ -326,21 +326,14 @@ class CCDF(Formula):
         print('generating the conditional cdf...')
 
         g = self.g
-        # x = Symbol('x')
         expr = 0
 
         for f in g.edges():
             tmp = 0
             for (i, j) in g.two2:
                 tmp += g.Rx[e, f, i, j].m_p(g.phi_pq / g.phi_p)
-                mtmp = g.Rx[e, f, i, j].m_p(g.phi_pq / g.phi_p)
-                print((f, i, j), '\t', mtmp.subs([(p, 0), (x, 3)]))
-
 
             expr += g.gy[f]* tmp
-        print('total', expr.subs([(p, 0), (x, 3)]))
-
-
 
         self.fs[e] = expand(expr)
         return True
@@ -385,11 +378,20 @@ class CPDF(Formula):
         for f in g.edges():
             const = g.gy[f] / g.l[f]
             tmp = 0
-            # mxs = {}
+
             for (i, j) in g.two2:
                 c0 = cf.eta(g.a[e, f, i, j], g.b[e, f, i, j], x)
-                c1 = cf.eta(g.L[e, f, i, j].bases[0].pl, g.L[e, f, i, j].bases[0].pu, p)
+                rg = g.L[e, f, i, j].bases[0]
+                myeta = None
+                if rg.bd[0] is False:
+                    myeta = cf.etal
+                elif rg.bd[1] is False:
+                    myeta = cf.etar
+                else:
+                    myeta = cf.eta
+                c1 = myeta(rg.pl, rg.pu, p)
                 phis = (g.phi_pq / g.phi_p).subs(q, g.q[e, f, i, j])
+                tmp += c0 * c1 * phis
 
             expr += const * tmp
 

@@ -12,11 +12,11 @@ def get_R(e, f, g, le, lf, duv, d, p1, p2, q1, q2):
             b = g.b[e, f, i, j]
             xp = theta(a, b, x)
             if (i, j) == (0, 0):
-                r1 = rg.RegionBase(0, xp/le, 0, p)
+                r1 = rg.RegionBase(0, xp/le, 0, p, bd=(True, False))
                 r2 = rg.RegionBase(xp/le, 1, p - xp/le, p)
                 R = rg.Region((r1,r2))
             elif (i, j) == (0, 1):
-                r1 = rg.RegionBase(0, 1 - xp/le, p, p + xp/le)
+                r1 = rg.RegionBase(0, 1 - xp/le, p, p + xp/le, bd=(True, False))
                 r2 = rg.RegionBase(1 - xp/le, 1, p, 1)
                 R = rg.Region((r1,r2))
             elif (i, j) == (1, 0):
@@ -44,12 +44,12 @@ def get_R(e, f, g, le, lf, duv, d, p1, p2, q1, q2):
                 R = rg.Region((r1, r2, r3))
             elif (i, j) == (1, 0):
                 r1 = rg.RegionBase((- xp + d[i, j] + le)/le, 1, 0, (xp + le * p - d[i, j] - le)/lf)
-                r2 = rg.RegionBase((- xp + d[i, j] + le)/le, p1, 0, (xp + le * p - d[i, j] - le)/lf, sgn=-1, eta=True, a=(1 - p1) * le + d[i,j])
+                r2 = rg.RegionBase((- xp + d[i, j] + le)/le, p1, 0, (xp + le * p - d[i, j] - le)/lf, sgn=-1, eta=True, a=(1 - p1) * le + d[i,j], bd=(True, False))
                 r3 = rg.RegionBase((- xp + lf * q2 + d[i, j] + le)/le, 1, q2, (xp + le * p - d[i, j] - le)/lf, sgn=-1, eta=True, a=lf * q2 + d[i, j])
                 R = rg.Region((r1, r2, r3))
             else:
                 r1 = rg.RegionBase((- xp + d[i, j] + le)/le, 1, (- xp - le * p + d[i, j] + le + lf)/lf, 1)
-                r2 = rg.RegionBase((- xp + d[i, j] + le)/le, p2, (- xp - le * p + d[i, j] + le + lf)/lf, 1, sgn=-1, eta=True, a=(1 - p2) * le + d[i,j])
+                r2 = rg.RegionBase((- xp + d[i, j] + le)/le, p2, (- xp - le * p + d[i, j] + le + lf)/lf, 1, sgn=-1, eta=True, a=(1 - p2) * le + d[i,j], bd=(True, False))
                 r3 = rg.RegionBase((- xp - lf * q2 + d[i, j] + le + lf)/le, 1, (- xp - le * p + d[i, j] + le + lf)/lf, q2, sgn=-1, eta=True, a=(1 - q2) * lf + d[i,j])
                 R = rg.Region((r1, r2, r3))
             g.Rx[e, f, i, j] = R
@@ -86,13 +86,13 @@ def get_L(e, f, g, le, lf, duv, d, p1, p2, q1, q2):
                 r = rg.RegionBase(
                         Max(0,(2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
                         Min(p1, (xp - d[i, j])/le), 
-                        None, None)
+                        None, None, bd=(True, False))
                 R = rg.Region((r,))
             elif (i, j) == (0, 1):
                 r = rg.RegionBase(
                         Max(0, (2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
                         Min(p2, (xp - d[i, j])/le), 
-                        None, None)
+                        None, None, bd=(True, False))
                 R = rg.Region((r,))
             elif (i, j) == (1, 0):
                 r = rg.RegionBase(
