@@ -10,14 +10,20 @@ def readGraph(fpath, gname):
     return gg.GraphFromFile(fpath, gname).G
 
 # generate all basic infomation
-def loadInfo(g, phi, rational = False):
+def loadInfo(g, phi_p=None, phi_q=None, phi_pq=None, rational = False):
+
     print('generate basic info...')
+    # make pdfs
+    g.phi_p = phi_p
+    g.phi_q = phi_q
+    g.phi_pq = phi_pq
+    gen_phi(g)
+
+    g.moment_info = {}
+    g.cmoment_info = {}
+
     # if using rational number to handle division
     g.rat = rational
-
-    # save pdf
-    g.phi = toSym(phi)
-    g.moment_info = {}
 
     # index set
     g.two = (0,1)
@@ -84,6 +90,19 @@ def update_phi(phi):
 #    for e in g.edges():
 #        g.oedges.append(e_repr(e))
 
+# generate all phis
+def gen_phi(g):
+    if g.phi_p is not None and g.phi_q is not None:
+        g.phi_p = toSym(g.phi_p)
+        g.phi_q = toSym(g.phi_q)
+        g.phi_pq = g.phi_p * g.phi_q
+    elif g.phi_pq is not None:
+        g.phi_pq = toSym(g.phi_pq)
+        p, q = symbols('p,q')
+        g.phi_p = integrate(g.phi_pq, (q, 0 , 1))
+        g.phi_q = integrate(g.phi_pq, (p, 0 , 1))
+    else:
+        raise Exception('please provide both phi_p and phi_q, or the joint pdf phi_pq.')
 
 # get shortest path matrix D
 def get_d(g):

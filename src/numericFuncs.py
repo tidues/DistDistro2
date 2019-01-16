@@ -3,7 +3,7 @@ from sympy import lambdify
 
 # numeric gate function
 def eta(a, b, x):
-    if x >= a and x <=b:
+    if x >= a and x <= b:
         return 1
     else:
         return 0

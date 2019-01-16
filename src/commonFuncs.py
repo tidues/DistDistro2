@@ -13,11 +13,34 @@ class eta(Function):
     def eval(cls, a, b, x):
         if a.is_Number and b.is_Number and x.is_Number:
             zero = numbers.Zero()
-            if x >= a and x <=b:
+            if x >= a and x <= b:
                 return 1 + zero
             else:
                 return 0 + zero
 
+class etal(Function):
+    nargs = 3
+
+    @classmethod
+    def eval(cls, a, b, x):
+        if a.is_Number and b.is_Number and x.is_Number:
+            zero = numbers.Zero()
+            if x > a and x <= b:
+                return 1 + zero
+            else:
+                return 0 + zero
+
+class etar(Function):
+    nargs = 3
+
+    @classmethod
+    def eval(cls, a, b, x):
+        if a.is_Number and b.is_Number and x.is_Number:
+            zero = numbers.Zero()
+            if x >= a and x < b:
+                return 1 + zero
+            else:
+                return 0 + zero
 # symbolic theshold function
 #theta = lambda a, b, x: Piecewise((a, x < a), (b, x > b), (x, True))
 

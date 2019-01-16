@@ -42,6 +42,24 @@ class RegionBase:
         else:
             return self.sgn * res
 
+    # conditional mass function
+    def m_p(self, f):
+        return cf.eta(self.pl, self.pu, p) * integrate(f, (q, self.ql, self.qu))
+
+    # conditional adjusted mass function
+    def m_p_adj(self, f):
+        res = self.m_p(f)
+        if self.eta is True:
+            return self.sgn * cf.eta(self.a, self.b, self.xval) * res
+        else:
+            return self.sgn * res
+
+
+
+
+
+        
+
     ## eval m_adj
     #def m_adj_eval(self, f):
     #    print(f)
@@ -89,11 +107,19 @@ class RegionBase:
 class Region:
     def __init__(self, bases):
         self.bases = bases
-    
+   
+    # the measure of this region
     def m(self, f):
         res = 0
         for b in self.bases:
             res = res + b.m_adj(f)
+        return res
+
+    # the conditional measure of this region
+    def m_p(self, f):
+        res = 0
+        for b in self.bases:
+            res = res + b.m_p_adj(f)
         return res
 
     # print region description

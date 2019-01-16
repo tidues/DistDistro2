@@ -4,3 +4,7 @@ class Stats(Enum):
     MOMENT = 1
     CDF = 2
     PDF = 3
+    CMOMENT = 4
+    CCDF = 5
+    CPDF = 6
+    SIMULATION = 7
