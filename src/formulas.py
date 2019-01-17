@@ -175,12 +175,8 @@ class Moment(Formula):
                             # q = Symbol('q')
                             # p = Symbol('p')
                             expr = q ** alpha[0] * p ** alpha[1] * g.phi_pq
-                            m = g.R[e, f, i, j].m(expr)
 
-                            m_num = g.R[e, f, i, j].m_num(expr)
-                            epsilon = 1e-6
-                            if abs(m - m_num) > epsilon:
-                                print(m, '\t', m_num)
+                            m = g.R[e, f, i, j].m_num(expr)
                             
                             g.moment_info[e, f, i, j, alpha] = c * m
 

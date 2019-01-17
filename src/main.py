@@ -13,11 +13,11 @@ import time
 # module test switch
 switches = {
         Stats.MOMENT: 1,
-        Stats.CDF: 0,
-        Stats.PDF: 0,
-        Stats.CMOMENT: 0,
-        Stats.CCDF: 0,
-        Stats.CPDF: 0,
+        Stats.CDF: 1,
+        Stats.PDF: 1,
+        Stats.CMOMENT: 1,
+        Stats.CCDF: 1,
+        Stats.CPDF: 1,
         Stats.SIMULATION: 0,
         Stats.TIMING: 0
         }
