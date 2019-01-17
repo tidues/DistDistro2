@@ -8,3 +8,4 @@ class Stats(Enum):
     CCDF = 5
     CPDF = 6
     SIMULATION = 7
+    TIMING = 8

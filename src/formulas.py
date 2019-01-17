@@ -1,5 +1,6 @@
 from enums import Stats
 import commonFuncs as cf
+import numericFuncs as nf
 from sympy import *
 from sympy.abc import p, q, x
 from sympy.plotting import plot
@@ -10,7 +11,8 @@ class Formula:
         self.stat = None  # the formula type
         self.g = g
         self.fs = {}  # all formulas
-        self.mods = ['numpy', {'theta': cf.theta, 'eta': cf.eta}]  ## modules for lambdify
+        self.N_fs = {}
+        self.mods = ['numpy', {'theta': nf.theta, 'eta': nf.eta, 'etal': nf.etal, 'etar': nf.etar}]  ## modules for lambdify
         self.idx_num = 0  # dimension of indexes for self.fs
         self.val_keys = None  # the symbols for values
         self.plot_info = (None, x, -1, self.g.d_max + 1)  # plotting parameters
@@ -19,31 +21,48 @@ class Formula:
     # evaluation
     def eval(self, *params):
         # split params into keys and vals
-        keys, subval = self.__split_input(*params)
+        keys, subval, vals = self.__split_input(*params)
 
+        myf = self.get_N_fs(keys)
+
+        # select formula then return the evaluation
+        return self.__apply(myf, vals)
+        # return self.__subs(self.fs[self.mkkey(keys)], subval)
+
+    # lambdify
+    def get_N_fs(self, keys):
         # generate formula if nece
         self.__gen_formula_wrapper(keys)
 
-        # select formula then return the evaluation
-        return self.__subs(self.fs[self.mkkey(keys)], subval)
+        # generate numeric function if nece
+        keys = self.mkkey(keys)
+        if keys not in self.N_fs:
+            expr = self.fs[keys]
+            if self.val_keys is None:
+                self.N_fs[keys] = expr
+            elif len(self.val_keys) == 1:
+                self.N_fs[keys] = lambdify(self.val_keys[0], expr, modules=self.mods)
+            else:
+                self.N_fs[keys] = lambdify(self.val_keys, expr, modules=self.mods)
+        return self.N_fs[keys]
 
     # output the formula
     def formula(self, *params):
         # split params into keys and vals
-        keys, subval = self.__split_input(*params)
+        keys, subval, vals = self.__split_input(*params)
         # generate formula if nece
         self.__gen_formula_wrapper(keys)
         return self.__subs(self.fs[self.mkkey(keys)], subval)
 
     # input f_info = (f, var, lb, ub)
-    def plot(self, *params, method=0, step=0.1):
+    def plot(self, *params, step=0.01):
         if self.stat != Stats.MOMENT:
             if len(params) == 0:
                 self.gen_formula()
                 f = self.fs[self.unikey]
             else:
                 # split params into keys and vals
-                keys, subval = self.__split_input(*params)
+                keys, subval, vals = self.__split_input(*params)
                 self.__gen_formula_wrapper(keys)
                 f = self.__subs(self.fs[self.mkkey(keys)], subval)
 
@@ -51,14 +70,17 @@ class Formula:
             lb = self.plot_info[2]
             ub = self.plot_info[3]
 
-            if method == 0:
-                try:
-                    plot(f, (var, lb, ub))
-                except:
-                    self.plot(method=1, step=step)
-            else:
-                f_lambda = lambdify(var, f, modules=self.mods)
-                plot1d(f_lambda, lb, ub, step)
+            f_lambda = lambdify(var, f, modules=self.mods)
+            plot1d(f_lambda, lb, ub, step)
+
+            #if method == 0:
+            #    try:
+            #        plot(f, (var, lb, ub))
+            #    except:
+            #        self.plot(method=1, step=step)
+            #else:
+            #    f_lambda = lambdify(var, f, modules=self.mods)
+            #    plot1d(f_lambda, lb, ub, step)
         else:
             print('moment function cannot be plotted.')
 
@@ -67,6 +89,12 @@ class Formula:
             self.gen_formula()
         else:
             self.gen_formula(*keys)
+
+    def __apply(self, f, vals):
+        if len(vals) == 0:
+            return f
+        else:
+            return f(*vals)
 
     def mkkey(self, keys):
         if len(keys) == 1:
@@ -96,7 +124,9 @@ class Formula:
         else:
             subval = list(zip(self.val_keys, vals))
 
-        return (keys, subval)
+        vals = tuple(vals)
+
+        return (keys, subval, vals)
 
     # return formula with subs
     def __subs(self, formula, subval):
@@ -129,6 +159,7 @@ class Moment(Formula):
                 for (i, j) in g.two2:
                     ip = i + 1
                     jp = j + 1
+
                     for alpha in alphas:
                         # produce entry info
                         if (e, f, i, j, alpha) not in g.moment_info:
@@ -145,6 +176,12 @@ class Moment(Formula):
                             # p = Symbol('p')
                             expr = q ** alpha[0] * p ** alpha[1] * g.phi_pq
                             m = g.R[e, f, i, j].m(expr)
+
+                            m_num = g.R[e, f, i, j].m_num(expr)
+                            epsilon = 1e-6
+                            if abs(m - m_num) > epsilon:
+                                print(m, '\t', m_num)
+                            
                             g.moment_info[e, f, i, j, alpha] = c * m
 
                         # sum up
@@ -154,13 +191,10 @@ class Moment(Formula):
                             c2 = cf.ncrs(k, alpha) * (g.d[e[i]][f[j]] + i * g.l[e] + j * g.l[f]) ** (k - alpha[0] - alpha[1])
                         
                         res += c2 * self.g.moment_info[e, f, i, j, alpha]
+
+
         self.fs[k] = res
         return True
-
-#    def eval(self, k):
-#        self.__gen_formula(k)
-#        return self.fs[k]
-
     
 class CDF(Formula):
     def __init__(self, g):
@@ -190,11 +224,6 @@ class CDF(Formula):
         self.fs[self.unikey] = expand(expr)
         return True
 
-#    def eval(self, x_val):
-#        # x = Symbol('x')
-#        return self.f.subs(x, x_val)
-
-
 class PDF(Formula):
     def __init__(self, g):
         super().__init__(g)
@@ -221,31 +250,11 @@ class PDF(Formula):
                     m = g.L[e, f, i, j].m(phis)
                     tmp += c * m
 
-                    # print((e, f, i, j))
-                    # print('c:\t', c)
-                    # print('phis:\t', phis)
-                    # print('m:\t', m)
-                    # print('L:\t')
-                    # g.L[e, f, i, j].print()
-                    # mxs[i, j] = (c * m / g.l[f]).subs(x, 3)
-                    
-                # if e == ('1','2') and f == ('2', '3'):
-                #     print('mxs2:', mxs)
-
-                    
-
-                # mat_D[e, f] = (tmp / g.l[f])
-
                 expr += const * tmp
 
         # self.mat_D = mat_D
         self.fs[self.unikey] = expand(expr)
-        #self.f = lambdify(x, self.expr, modules=self.modules)
         return True
-
-#    def eval(self, x_val):
-#        # x = Symbol('x')
-#        return self.f.subs(x, x_val)
 
 
 ###############################################################
@@ -271,6 +280,7 @@ class CMoment(Formula):
             for (i, j) in g.two2:
                 ip = i + 1
                 jp = j + 1
+                
                 for alpha in alphas:
                     # produce entry info
                     c0 = (g.gy[f] * g.l[f] ** alpha[0] * g.l[e] ** alpha[1])
@@ -292,25 +302,11 @@ class CMoment(Formula):
                         c2 = cf.ncrs(k, alpha) * (i * (g.d[e[0]][e[1]] + g.l[e])) ** (k - alpha[0] - alpha[1])
                     else:
                         c2 = cf.ncrs(k, alpha) * (g.d[e[i]][f[j]] + i * g.l[e] + j * g.l[f]) ** (k - alpha[0] - alpha[1])
-                    
+
                     res += c2 * tmpres
 
-        self.fs[k, e] = res
+        self.fs[k, e] = expand(res)
         return True
-
-#    def eval(self, k, e, p_val):
-#        if (k, e) not in self.fs:
-#            self.fs[k, e] = self.__gen_formula(k, e)
-#            
-#        return self.fs[k, e].subs(p, p_val)
-        
-#    def formula(self, k, e):
-#        print(self.fs[k, e])
-
-#    def plot(self, k, e):
-#        info = (self.fs[k, e], p, 0, 1)
-#        super().plot(f_info=info)
-
 
 class CCDF(Formula):
     def __init__(self, g):
@@ -338,25 +334,6 @@ class CCDF(Formula):
         self.fs[e] = expand(expr)
         return True
 
-#    def eval(self, e, p_val, x_val):
-#        self.__gen_formula(e)
-#        return self.fs[e].subs([(p, p_val), (x, x_val)])
-
-#    # formula in x and p for given e
-#    def formula(self, e):
-#        self.__gen_formula(e)
-#        return self.fs[e]
-
-#    # pdf for given e, p
-#    def formula_p(self, e, p_val):
-#        self.__gen_formula(e)
-#        return self.fs[e].subs(p, p_val)
-
-#    # plot the pdf for given p
-#    def plot_p(self, e, p_val):
-#        self.__gen_formula(e)
-#        info = (self.fs[e].subs(p, p_val), None, None, None)
-#        super().plot(f_info=info)
 
 
 class CPDF(Formula):
@@ -398,21 +375,3 @@ class CPDF(Formula):
         self.fs[e] = expand(expr)
         return True
 
-#    def eval(self, e, p_val, x_val):
-#        if e not in self.fs:
-#            self.fs[e] = self.__gen_formula(e)
-#
-#        return self.fs[e].subs([(p, p_val), (x, x_val)])
-
-#    # formula in x and p for given e
-#    def formula(self, e):
-#        return self.fs[e]
-
-#    # pdf for given e, p
-#    def formula_p(self, e, p_val):
-#        return self.fs[e].subs(p, p_val)
-
-#    # plot the pdf for given p
-#    def plot_p(self, e, p_val):
-#        info = (self.fs[e].subs(p, p_val), None, None, None)
-#        super().plot(f_info=info)

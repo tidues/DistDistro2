@@ -1,7 +1,7 @@
 from sympy import *
 import commonFuncs as cf
 from sympy.abc import p, q, x
-
+import numericFuncs as nf
 
 # basic components of a region
 class RegionBase:
@@ -26,7 +26,7 @@ class RegionBase:
         self.eta = eta
         self.a = a
         self.b = b
-        self.xval = xval
+        self.xval = xval # is x if it is a region function; or upper bound if is a region
         self.bd = bd
         # self.modules = ['numpy']
 
@@ -66,19 +66,30 @@ class RegionBase:
         else:
             return self.sgn * res
 
+    # numerical integration
+    def m_num(self, expr, x_val=None):
+        if x_val is None:
+            range1 =  (p, self.pl, self.pu)
+        else:
+            range1 = (p, self.pl.subs(x, x_val), self.pu.subs(x, x_val))
 
+        if self.ql is None:
+            range2 = None
+        elif x_val is None:
+            range2 = (q, self.ql, self.qu)
+        else:
+            range2 = (q, self.ql.subs(x, x_val), self.qu.subs(x, x_val))
 
+        m, e = nf.N_int(expr, range1, range2)
+        # print('expr\t', expr)
+        # print('range1\t', range1)
+        # print('range2\t', range2)
+        return m
 
-
-        
-
-    ## eval m_adj
-    #def m_adj_eval(self, f):
-    #    print(f)
-    #    res = self.m_adj(f)
-    #    print(res)
-    #    print(self.xval)
-    #    return self.eval(res, self.xval)
+    # adjusted numerical integration
+    def m_num_adj(self, expr, x_val=None):
+        res = self.m_num(expr, x_val)
+        return self.sgn * nf.eta(self.a, self.b, self.xval) * res
 
     # produce fixed region bases
     def RB_const(self, val):
@@ -91,7 +102,8 @@ class RegionBase:
                 eta = self.eta,
                 a = self.a,
                 b = self.b,
-                xval = val
+                xval = val,
+                bd = self.bd
                 )
 
     # def lambdify
@@ -132,6 +144,13 @@ class Region:
         res = 0
         for b in self.bases:
             res = res + b.m_p_adj(f)
+        return res
+
+    # numerical value
+    def m_num(self, f, x_val=None):
+        res = 0
+        for b in self.bases:
+            res += b.m_num_adj(f, x_val)
         return res
 
     # print region description

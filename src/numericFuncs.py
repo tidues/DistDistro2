@@ -32,11 +32,8 @@ def theta(a, b, x):
         return x
 
 
-# check if input expression is a valid pdf 
-# can only verify the integral as 1
-# the non-neg need to be guarenteed manually
-# only support at most 2-dim input function
-def pdf_check(expr, range1, range2=None):
+# numerical integration with an input expression from sympy
+def N_int(expr, range1, range2=None):
     mods = ['numpy', {'theta': theta, 'eta': eta, 'etal': etal, 'etar': etar}]
 
     x = range1[0]
@@ -56,13 +53,16 @@ def pdf_check(expr, range1, range2=None):
 
     region = tuple(region)
 
-    #print(region)
-    #print(var)
-    #print(expr)
-
     f = lambdify(var, expr, modules=mods)
 
-    m, e = int_func(f, *region)
+    return int_func(f, *region)
+
+# check if input expression is a valid pdf 
+# can only verify the integral as 1
+# the non-neg need to be guarenteed manually
+# only support at most 2-dim input function
+def pdf_check(expr, range1, range2=None):
+    m, e = N_int(expr, range1, range2)
 
     if 1 < m - e or 1 > m + e:
         return (False, m, e)
