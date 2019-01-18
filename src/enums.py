@@ -9,3 +9,4 @@ class Stats(Enum):
     CPDF = 6
     SIMULATION = 7
     TIMING = 8
+    SAVE = 9

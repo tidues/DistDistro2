@@ -9,18 +9,29 @@ from networkx import is_connected
 from enums import Stats
 import numpy as np
 import time
+from commonFuncs import load_formulas
 
 # module test switch
 switches = {
-        Stats.MOMENT: 1,
-        Stats.CDF: 1,
-        Stats.PDF: 1,
-        Stats.CMOMENT: 1,
-        Stats.CCDF: 1,
-        Stats.CPDF: 1,
+        Stats.MOMENT: 0,
+        Stats.CDF: 0,
+        Stats.PDF: 0,
+        Stats.CMOMENT: 0,
+        Stats.CCDF: 0,
+        Stats.CPDF: 0,
         Stats.SIMULATION: 0,
+        Stats.SAVE: 1,
         Stats.TIMING: 0
         }
+
+if switches[Stats.SAVE] == 1:
+    moment = load_formulas(Stats.MOMENT)
+    print(moment.stat)
+    print(moment.eval(0))
+    print(moment.eval(1))
+    print(moment.eval(2))
+    cdf = load_formulas(Stats.CDF)
+    cdf.plot()
 
 # graph file
 fpath = '../data/'
@@ -55,12 +66,20 @@ if switches[Stats.MOMENT] == 1:
     # print(moment.eval(0))
     print(moment.eval(1))
     print(moment.eval(2))
+    sm = moment.save()
+    print(sm.eval(1))
+    print(sm.eval(2))
+    print(sm.eval(3))
 
 # cdf stats
 if switches[Stats.CDF] == 1:
     cdf = fl.CDF(g)
     cdf.formula()
     cdf.plot()
+    cdf.save()
+    mcdf = load_formulas(Stats.CDF)
+    cdf.plot()
+    
 
 # pdf stats
 if switches[Stats.PDF] == 1:
@@ -112,6 +131,7 @@ if switches[Stats.CPDF] == 1:
     for p in plst:
         cpdf.plot(e, p)
         print(nf.pdf_check(cpdf.formula(e, p), (x, 0, g.d_max)))
+
 
 # time comparison
 # take an region

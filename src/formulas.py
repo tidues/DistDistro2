@@ -3,8 +3,11 @@ import commonFuncs as cf
 import numericFuncs as nf
 from sympy import *
 from sympy.abc import p, q, x
-from sympy.plotting import plot
 from plot import plot1d
+from serializedFormula import *
+import os
+import dill
+
 
 class Formula:
     def __init__(self, g):
@@ -17,13 +20,18 @@ class Formula:
         self.val_keys = None  # the symbols for values
         self.plot_info = (None, x, -1, self.g.d_max + 1)  # plotting parameters
         self.unikey = 'zero'
+        self.folder = './.formulas/'
+        self.fullsave = None
 
     # evaluation
     def eval(self, *params):
         # split params into keys and vals
         keys, subval, vals = self.__split_input(*params)
 
-        myf = self.get_N_fs(keys)
+        # generate formula if nece
+        self.__gen_formula_wrapper(keys)
+
+        myf = self.get_N_fs(self.mkkey(keys))
 
         # select formula then return the evaluation
         return self.__apply(myf, vals)
@@ -31,11 +39,7 @@ class Formula:
 
     # lambdify
     def get_N_fs(self, keys):
-        # generate formula if nece
-        self.__gen_formula_wrapper(keys)
 
-        # generate numeric function if nece
-        keys = self.mkkey(keys)
         if keys not in self.N_fs:
             expr = self.fs[keys]
             if self.val_keys is None:
@@ -73,16 +77,36 @@ class Formula:
             f_lambda = lambdify(var, f, modules=self.mods)
             plot1d(f_lambda, lb, ub, step)
 
-            #if method == 0:
-            #    try:
-            #        plot(f, (var, lb, ub))
-            #    except:
-            #        self.plot(method=1, step=step)
-            #else:
-            #    f_lambda = lambdify(var, f, modules=self.mods)
-            #    plot1d(f_lambda, lb, ub, step)
         else:
             print('moment function cannot be plotted.')
+
+    # save formula
+    def save(self):
+        sf = SFormula()
+        sf.stat = self.stat
+        sf.fs = self.fs
+        sf.N_fs = {}
+        for key in self.fs:
+            if key in self.N_fs:
+                sf.N_fs[key] = self.N_fs[key]
+            else:
+                sf.N_fs[key] = self.get_N_fs(key)
+        sf.mods = self.mods
+        sf.idx_num = self.idx_num
+        sf.val_keys = self.val_keys
+        sf.plot_info = self.plot_info
+        sf.unikey = self.unikey
+
+        # create folder
+        if not os.path.exists(self.folder):
+            os.makedirs(self.folder)
+
+        # pickle sf
+        dill.settings['recurse'] = True
+        dill.dump(sf, open(self.fullsave, 'wb'))
+
+        return sf
+
 
     def __gen_formula_wrapper(self, keys):
         if keys == self.unikey:
@@ -139,12 +163,18 @@ class Formula:
     def gen_formula(self):
         # realized by the inherited classes
         pass
+
+    # make save name
+    def mksvname(self):
+        self.fullsave = self.folder + str(self.stat) + '.sav'
+
     
 class Moment(Formula):
     def __init__(self, g):
         super().__init__(g)
         self.stat = Stats.MOMENT
         self.idx_num = 1
+        self.mksvname()
 
     def gen_formula(self, k):
         if k in self.fs:
@@ -197,6 +227,7 @@ class CDF(Formula):
         super().__init__(g)
         self.stat = Stats.CDF
         self.val_keys = (x,)
+        self.mksvname()
 
     def gen_formula(self):
         if self.unikey in self.fs:
@@ -225,6 +256,7 @@ class PDF(Formula):
         super().__init__(g)
         self.stat = Stats.PDF
         self.val_keys = (x,)
+        self.mksvname()
 
     def gen_formula(self):
         if self.unikey in self.fs:
@@ -263,6 +295,7 @@ class CMoment(Formula):
         self.idx_num = 2
         self.val_keys = (p,)
         self.plot_info = (None, p, 0, 1)
+        self.mksvname()
 
     def gen_formula(self, k, e):
         if (k, e) in self.fs:
@@ -310,6 +343,7 @@ class CCDF(Formula):
         self.stat = Stats.CCDF
         self.idx_num = 1
         self.val_keys = (p, x)
+        self.mksvname()
 
     def gen_formula(self, e):
         if e in self.fs:
@@ -338,6 +372,7 @@ class CPDF(Formula):
         self.stat = Stats.CPDF
         self.idx_num = 1
         self.val_keys = (p, x)
+        self.mksvname()
 
     def gen_formula(self, e):
         if e in self.fs:

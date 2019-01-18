@@ -2,6 +2,7 @@ import pyprelude.FPToolBox as fp
 from math import factorial
 from sympy import *
 from sympy.abc import a, b, x
+import dill
 
 # symbolic gate function
 #eta = lambda a, b, x: Piecewise((1, (x >= a) & (x <= b)), (0, True))
@@ -160,3 +161,12 @@ if __name__ == '__main__':
     from sympy.plotting import plot
     
     plot(eta(1, oo, x), (x, -1, 5))
+
+# load serialized formulas
+# stat from enums
+def load_formulas(stat, folder='./.formulas/'):
+    path = folder + str(stat) + '.sav'
+    try:
+        return dill.load(open(path, 'rb'))
+    except:
+        print('formula does not exist')
