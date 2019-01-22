@@ -184,30 +184,24 @@ def get_q(e, f, g, le, lf, duv, d, p1, p2, q1, q2):
 
     if e == f:
         for (i, j) in g.two2:
-            a = g.a[e, f, i, j]
-            b = g.b[e, f, i, j]
-            xp = theta(a, b, x)
             if (i, j) == (0, 0):
-                g.q[e, e, i, j] = p - xp / le
+                g.q[e, e, i, j] = p - x / le
             elif (i, j) == (0, 1):
-                g.q[e, e, i, j] = p + xp / le
+                g.q[e, e, i, j] = p + x / le
             elif (i, j) == (1, 0):
-                g.q[e, e, i, j] = p - 1 + (xp - duv) / le
+                g.q[e, e, i, j] = p - 1 + (x - duv) / le
             else:
-                g.q[e, e, i, j] = p + 1 - (xp - duv) / le
+                g.q[e, e, i, j] = p + 1 - (x - duv) / le
     else:
         for (i, j) in g.two2:
-            a = g.a[e, f, i, j]
-            b = g.b[e, f, i, j]
-            xp = theta(a, b, x)
             if (i, j) == (0, 0):
-                g.q[e, f, i, j] = (xp - le * p - d[i, j]) / lf
+                g.q[e, f, i, j] = (x - le * p - d[i, j]) / lf
             elif (i, j) == (0, 1):
-                g.q[e, f, i, j] = (- xp + le * p + d[i, j] + lf) / lf
+                g.q[e, f, i, j] = (- x + le * p + d[i, j] + lf) / lf
             elif (i, j) == (1, 0):
-                g.q[e, f, i, j] = (xp + le * p - d[i, j] - le) / lf
+                g.q[e, f, i, j] = (x + le * p - d[i, j] - le) / lf
             else:
-                g.q[e, f, i, j] = (- xp - le * p + d[i, j] + le + lf) / lf
+                g.q[e, f, i, j] = (- x - le * p + d[i, j] + le + lf) / lf
 
 #############################################################################
 # verify functions

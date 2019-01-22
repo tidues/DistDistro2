@@ -3,6 +3,7 @@ from math import factorial
 from sympy import *
 from sympy.abc import a, b, x
 import dill
+import networkx as nx
 
 # symbolic gate function
 #eta = lambda a, b, x: Piecewise((1, (x >= a) & (x <= b)), (0, True))
@@ -170,3 +171,13 @@ def load_formulas(stat, folder='./.formulas/'):
         return dill.load(open(path, 'rb'))
     except:
         print('formula does not exist')
+
+# get largets components
+def get_largest_component(g):
+    if nx.is_connected(g):
+        return g
+    else:
+        cc = max(nx.connected_components(g), key=len)
+        return g.subgraph(cc)
+
+
