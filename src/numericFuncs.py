@@ -31,10 +31,9 @@ def theta(a, b, x):
     else:
         return x
 
-
 # numerical integration with an input expression from sympy
 def N_int(expr, range1, range2=None):
-    mods = ['numpy', {'theta': theta, 'eta': eta, 'etal': etal, 'etar': etar}]
+    mods = ['numpy', {'theta': theta, 'eta': eta, 'etal': etal, 'etar': etar, 'mmin': min, 'mmax': max}]
 
     x = range1[0]
     region = [range1[1], range1[2]]

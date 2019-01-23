@@ -13,15 +13,12 @@ class RegionBase:
     #     (just pl, pu for now) is included
     #       in the region
     def __init__(self, pl, pu, ql, qu, sgn=1, eta=False, a=0, b=oo, xval=x, bd=(True, True)):
-        zero = numbers.Zero()
-        self.pl = cf.toSym(pl)
-        self.pu = cf.toSym(pu)
+        self.pl = sympify(pl)
+        self.pu = sympify(pu)
         if ql is not None:
-            ql = cf.toSym(ql)
+            self.ql = sympify(ql)
         if qu is not None:
-            qu = cf.toSym(qu)
-        self.ql = ql
-        self.qu = qu
+            self.qu = sympify(qu)
         self.sgn = sgn
         self.eta = eta
         self.a = a
@@ -94,6 +91,10 @@ class RegionBase:
     # produce fixed region bases
     def RB_const(self, val):
         return RegionBase(
+                #self.pl,
+                #self.pu,
+                #self.ql,
+                #self.qu,
                 self.eval(self.pl, val),
                 self.eval(self.pu, val),
                 self.eval(self.ql, val),
@@ -109,12 +110,6 @@ class RegionBase:
     # def lambdify
     def eval(self, expr, x_val):
         return expr.subs(x, x_val)
-        # res = lambdify(x, expr)(x_val)
-        # print(res)
-        # if isnumber(res) and self.rat:
-        #     res =  Rational(res)
-        # return res
-
 
     # print region description
     def print(self):

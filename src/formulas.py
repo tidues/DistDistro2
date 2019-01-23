@@ -15,7 +15,7 @@ class Formula:
         self.g = g
         self.fs = {}  # all formulas
         self.N_fs = {}
-        self.mods = ['numpy', {'theta': nf.theta, 'eta': nf.eta, 'etal': nf.etal, 'etar': nf.etar}]  ## modules for lambdify
+        self.mods = ['numpy', {'theta': nf.theta, 'eta': nf.eta, 'etal': nf.etal, 'etar': nf.etar, 'mmin': min, 'mmax': max}]  ## modules for lambdify
         self.idx_num = 0  # dimension of indexes for self.fs
         self.val_keys = None  # the symbols for values
         self.plot_info = (None, x, -1, self.g.d_max + 1)  # plotting parameters

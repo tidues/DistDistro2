@@ -59,6 +59,28 @@ class theta(Function):
             else:
                 return x
 
+class mmin(Function):
+    nargs = 2
+
+    @classmethod
+    def eval(cls, a, b):
+        if a.is_Number and b.is_Number:
+            if a <= b:
+                return a
+            else:
+                return b
+
+class mmax(Function):
+    nargs = 2
+
+    @classmethod
+    def eval(cls, a, b):
+        if a.is_Number and b.is_Number:
+            if a >= b:
+                return a
+            else:
+                return b
+
 # get unique representation of an edge
 def e_repr(e):
     if e[0]<e[1]:
@@ -145,10 +167,6 @@ def ncrs(n, rs):
 #    else:
 #        return mydict[key]
 
-# convert to sympy expression
-def toSym(val):
-    zero = numbers.Zero()
-    return val + zero
 
 # rationalize input
 def rat(val, rational):

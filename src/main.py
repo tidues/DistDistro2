@@ -112,7 +112,7 @@ if switches['clinuni'] == 1:
 if switches['manhatton'] == 1:
     # graph file
     fpath = '../data/'
-    gname = 'manhattan'
+    gname = 'planar_side_10'
     g = bi.readGraph(fpath, gname)
 
     g = get_largest_component(g)
@@ -127,7 +127,7 @@ if switches['manhatton'] == 1:
     bi.loadInfo(g, phi_pq=phi_pq, rational=False)
 
     e = ('1', '2')
-    p = 0.2
+    p = 0.5
     cpdf = fl.CPDF(g)
     cpdf.plot(e, p)
 

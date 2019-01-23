@@ -3,6 +3,7 @@ import pyprelude.GraphGen as gg
 from commonFuncs import *
 from regions import get_R, get_L
 from sympy import *
+import time
 
 # reads a graph input file
 def readGraph(fpath, gname):
@@ -13,6 +14,7 @@ def readGraph(fpath, gname):
 def loadInfo(g, phi_p=None, phi_q=None, phi_pq=None, rational = False):
 
     print('generate basic info...')
+    start = time.time()
     # make pdfs
     g.phi_p = phi_p
     g.phi_q = phi_q
@@ -37,16 +39,28 @@ def loadInfo(g, phi_p=None, phi_q=None, phi_pq=None, rational = False):
     g.l = {}
     g.gx = {}  # the pmf of X
     g.gy = {}  # the pmf of Y
+    end = time.time()
+    print('basic info:', end - start)
 
+    print('load edges properties')
+    start = time.time()
     for e in g.edges():
         g.l[e] = rat(g.edges[e]['l'], g.rat)
         g.gx[e] = rat(g.edges[e]['x'], g.rat)
         g.gy[e] = rat(g.edges[e]['y'], g.rat)
+    end = time.time()
+    print('load eddges:', end - start)
 
     # all pair shortest distance
+    print('get shortest path info')
+    start = time.time()
     get_d(g)
+    end = time.time()
+    print('get_d:', end - start)
 
     # compute p1 p2 q1 q2 for all edge pairs
+    print('calculate pq_const')
+    start = time.time()
     g.p1 = {}
     g.p2 = {}
     g.q1 = {}
@@ -56,28 +70,51 @@ def loadInfo(g, phi_p=None, phi_q=None, phi_pq=None, rational = False):
         for f in g.edges():
             if e != f:
                 get_pq_const(e, f, g)
+    end = time.time()
+    print('pq_const:', end - start)
 
     # the domain boundary info (a and b)
+    print('calculate ab_bounds')
+    start = time.time()
     g.a = {}
     g.b = {}
     g.d_max = 0
     for e in g.edges():
         for f in g.edges():
             get_ab(e, f, g)
+    end = time.time()
+    print('ab_bounds:', end - start)
 
     # the region info R, L, and q
+    print('make regions')
+    start = time.time()
     g.Rx = {}
     g.R = {}
     g.L = {}
     g.q = {}
+    cnt = 0
+    tR = 0
+    tL = 0
+    tq = 0
     for e in g.edges():
         for f in g.edges():
-            get_RLq(e, f, g)
+            cnt += 1
+            if cnt % 1000 == 0:
+                print(cnt)
+            t0, t1, t2 = get_RLq(e, f, g)
+            tR += t0
+            tL += t1
+            tq += t2
+    end = time.time()
+    print('regions:', end - start)
+    print('tR:', tR)
+    print('tL:', tL)
+    print('tq:', tq)
 
 
 # assign pdf phi_{P,Q}
 def update_phi(phi):
-    g.phi = toSym(phi)
+    g.phi = sympify(phi)
     g.moment_info = {}
 
 
@@ -93,11 +130,11 @@ def update_phi(phi):
 # generate all phis
 def gen_phi(g):
     if g.phi_p is not None and g.phi_q is not None:
-        g.phi_p = toSym(g.phi_p)
-        g.phi_q = toSym(g.phi_q)
+        g.phi_p = sympify(g.phi_p)
+        g.phi_q = sympify(g.phi_q)
         g.phi_pq = g.phi_p * g.phi_q
     elif g.phi_pq is not None:
-        g.phi_pq = toSym(g.phi_pq)
+        g.phi_pq = sympify(g.phi_pq)
         p, q = symbols('p,q')
         g.phi_p = integrate(g.phi_pq, (q, 0 , 1))
         g.phi_q = integrate(g.phi_pq, (p, 0 , 1))
@@ -107,9 +144,11 @@ def gen_phi(g):
 # get shortest path matrix D
 def get_d(g):
     g.d = dict(nx.all_pairs_dijkstra_path_length(g, weight = 'l'))
-    for i in g.nodes():
-        for j in g.nodes():
-            g.d[i][j] = rat(g.d[i][j], g.rat)
+    print("load shortest distance")
+    if g.rat:
+        for i in g.nodes():
+            for j in g.nodes():
+                g.d[i][j] = rat(g.d[i][j], g.rat)
 
 # get x bounds info
 def get_ab(e, f, g):
@@ -118,22 +157,20 @@ def get_ab(e, f, g):
         le = g.l[e]
         g.a[(e, e, 0, 0)] = rat(0, g.rat)
         g.a[(e, e, 0, 1)] = rat(0, g.rat)
-        g.a[(e, e, 1, 0)] = duv
-        g.a[(e, e, 1, 1)] = duv
+        g.a[(e, e, 1, 0)] = g.d[e[0]][e[1]]
+        g.a[(e, e, 1, 1)] = g.d[e[0]][e[1]]
 
         for (i,j) in g.two2:
-            bval = (duv + le) / 2
+            bval = (g.d[e[0]][e[1]] + g.l[e]) / 2
             g.b[(e, f, i, j)] = bval
 
             if bval > g.d_max:
                 g.d_max = bval
     else:
-        le = g.l[e]
-        lf = g.l[f]
 
         for (i,j) in g.two2:
             g.a[e, f, i, j] = g.d[e[i]][f[j]]
-            bval = (le + lf + 
+            bval = (g.l[e] + g.l[f] + 
                     min(g.d[e[0]][f[0]] + g.d[e[1]][f[1]], 
                         g.d[e[0]][f[1]] + g.d[e[1]][f[0]])) / 2
             g.b[e, f, i, j] = bval
@@ -142,12 +179,10 @@ def get_ab(e, f, g):
 
 # get p1 p2 q1 q2
 def get_pq_const(e, f, g):
-    le = g.l[e]
-    lf = g.l[f]
-    g.p1[e, f] = (-g.d[e[0]][f[0]] + g.d[e[1]][f[0]] + le) / (2 * le)
-    g.p2[e, f] = (-g.d[e[0]][f[1]] + g.d[e[1]][f[1]] + le) / (2 * le)
-    g.q1[e, f] = (-g.d[e[0]][f[0]] + g.d[e[0]][f[1]] + lf) / (2 * lf)
-    g.q2[e, f] = (-g.d[e[1]][f[0]] + g.d[e[1]][f[1]] + lf) / (2 * lf)
+    g.p1[e, f] = (-g.d[e[0]][f[0]] + g.d[e[1]][f[0]] + g.l[e]) / (2 * g.l[e])
+    g.p2[e, f] = (-g.d[e[0]][f[1]] + g.d[e[1]][f[1]] + g.l[e]) / (2 * g.l[e])
+    g.q1[e, f] = (-g.d[e[0]][f[0]] + g.d[e[0]][f[1]] + g.l[f]) / (2 * g.l[f])
+    g.q2[e, f] = (-g.d[e[1]][f[0]] + g.d[e[1]][f[1]] + g.l[f]) / (2 * g.l[f])
 
 
 # get region info R L q
@@ -158,24 +193,35 @@ def get_RLq(e, f, g):
     for (i, j) in g.two2:
         d[i, j] = g.d[e[i]][f[j]]
 
-    le = g.l[e]
-    lf = g.l[f]
-    duv = g.d[e[0]][e[1]]
-
-    p1 = None
-    p2 = None
-    q1 = None
-    q2 = None
-
     if e != f:
-        p1 = g.p1[e, f]
-        p2 = g.p2[e, f]
-        q1 = g.q1[e, f]
-        q2 = g.q2[e, f]
+        start = time.time()
+        get_R(e, f, g, g.l[e], g.l[f], g.d[e[0]][e[1]], d, g.p1[e,f], g.p2[e,f], g.q1[e,f], g.q2[e,f])
+        end = time.time()
+        tR = end - start
+        start = time.time()
+        get_L(e, f, g, g.l[e], g.l[f], g.d[e[0]][e[1]], d, g.p1[e,f], g.p2[e,f], g.q1[e,f], g.q2[e,f])
+        end = time.time()
+        tL = end - start
+        start = time.time()
+        get_q(e, f, g, g.l[e], g.l[f], g.d[e[0]][e[1]], d, g.p1[e,f], g.p2[e,f], g.q1[e,f], g.q2[e,f])
+        end = time.time()
+        tq = end - start
+    else:
+        start = time.time()
+        get_R(e, f, g, g.l[e], g.l[f], g.d[e[0]][e[1]], d, None, None, None, None)
+        end = time.time()
+        tR = end - start
+        start = time.time()
+        get_L(e, f, g, g.l[e], g.l[f], g.d[e[0]][e[1]], d, None, None, None, None)
+        end = time.time()
+        tL = end - start
+        start = time.time()
+        get_q(e, f, g, g.l[e], g.l[f], g.d[e[0]][e[1]], d, None, None, None, None)
+        end = time.time()
+        tq = end - start
 
-    get_R(e, f, g, le, lf, duv, d, p1, p2, q1, q2)
-    get_L(e, f, g, le, lf, duv, d, p1, p2, q1, q2)
-    get_q(e, f, g, le, lf, duv, d, p1, p2, q1, q2)
+    return (tR, tL, tq)
+
 
 # the q function for pdf
 def get_q(e, f, g, le, lf, duv, d, p1, p2, q1, q2):

@@ -1,7 +1,7 @@
 import region as rg
 from sympy import *
 from sympy.abc import x, p, q
-from commonFuncs import theta
+from commonFuncs import theta, mmax, mmin
 
 def get_R(e, f, g, le, lf, duv, d, p1, p2, q1, q2):
     # case e == f
@@ -84,27 +84,35 @@ def get_L(e, f, g, le, lf, duv, d, p1, p2, q1, q2):
             
             if (i, j) == (0, 0):
                 r = rg.RegionBase(
-                        Max(0,(2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
-                        Min(p1, (xp - d[i, j])/le), 
+                        mmax(0,(2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
+                        mmin(p1, (xp - d[i, j])/le), 
+                        #Max(0,(2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
+                        #Min(p1, (xp - d[i, j])/le), 
                         None, None, bd=(True, False))
                 R = rg.Region((r,))
             elif (i, j) == (0, 1):
                 r = rg.RegionBase(
-                        Max(0, (2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
-                        Min(p2, (xp - d[i, j])/le), 
+                        mmax(0, (2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
+                        mmin(p2, (xp - d[i, j])/le), 
+                        #Max(0, (2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
+                        #Min(p2, (xp - d[i, j])/le), 
                         None, None, bd=(True, False))
                 R = rg.Region((r,))
             elif (i, j) == (1, 0):
                 r = rg.RegionBase(
-                        Max(p1, (- xp + d[i, j] + le)/le), 
-                        Min(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)), 
+                        mmax(p1, (- xp + d[i, j] + le)/le), 
+                        mmin(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)), 
+                        #Max(p1, (- xp + d[i, j] + le)/le), 
+                        #Min(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)), 
                         None, None)
                 R = rg.Region((r,))
             elif (i, j) == (1, 1):
                 r = rg.RegionBase(
-                        Max(p2, (- xp + d[i, j] + le)/le), 
-                        Min(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le))
-                        , None, None)
+                        mmax(p2, (- xp + d[i, j] + le)/le), 
+                        mmin(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)),
+                        #Max(p2, (- xp + d[i, j] + le)/le), 
+                        #Min(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)),
+                        None, None)
                 R = rg.Region((r,))
 
             g.L[e, f, i, j] = R
