@@ -182,11 +182,15 @@ class Moment(Formula):
 
         print('calculating the ', k, 'th  moment...')
 
+        mat_M = {}
+
         res = 0
         alphas = cf.A_curl(2, k)
         g = self.g
         for e in g.edges():
             for f in g.edges():
+
+                tmp = 0
 
                 for (i, j) in g.two2:
                     ip = i + 1
@@ -220,6 +224,11 @@ class Moment(Formula):
                         
                         res += c2 * self.g.moment_info[e, f, i, j, alpha]
                         
+                        tmp += c2 * self.g.moment_info[e, f, i, j, alpha]
+
+                mat_M[e, f] = tmp
+
+
         self.fs[k] = res
         return True
     

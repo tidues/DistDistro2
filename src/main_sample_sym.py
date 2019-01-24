@@ -15,10 +15,10 @@ from commonFuncs import load_formulas
 switches = {
         Stats.MOMENT: 0,
         Stats.CDF: 0,
-        Stats.PDF: 1,
-        Stats.CMOMENT: 0,
+        Stats.PDF: 0,
+        Stats.CMOMENT: 1,
         Stats.CCDF: 0,
-        Stats.CPDF: 1,
+        Stats.CPDF: 0,
         Stats.SIMULATION: 0,
         Stats.SAVE: 0,
         Stats.TIMING: 0
@@ -35,7 +35,7 @@ if switches[Stats.SAVE] == 1:
 
 # graph file
 fpath = '../data/'
-gname = 'g3'
+gname = 'g1'
 
 # read graph
 g = bi.readGraph(fpath, gname)
@@ -63,13 +63,16 @@ if switches[Stats.SIMULATION] == 1:
 # moments stats
 if switches[Stats.MOMENT] == 1:
     moment = fl.Moment(g)
-    # print(moment.eval(0))
+    #print(moment.eval(0))
+    #moment.eval(1)
+    #print(moment.mat_M)
     print(moment.eval(1))
     print(moment.eval(2))
-    sm = moment.save()
-    print(sm.eval(1))
-    print(sm.eval(2))
-    print(sm.eval(3))
+    print(moment.eval(3))
+    #sm = moment.save()
+    #print(sm.eval(1))
+    #print(sm.eval(2))
+    #print(sm.eval(3))
 
 # cdf stats
 if switches[Stats.CDF] == 1:
@@ -92,22 +95,19 @@ if switches[Stats.PDF] == 1:
 
 # conditional moments stats
 if switches[Stats.CMOMENT] == 1:
-    e = ('1', '2')
-    f = ('1', '2')
-    i, j = (0, 1)
+    ks = [0, 1, 2]
+    es = [('1', '2')]
+    ps = [0, 0.5, 1]
     cmoment = fl.CMoment(g)
-    print(cmoment.eval(0, ('1','2'), 0))
-    print(cmoment.eval(0, ('1','2'), 0.5))
-    print(cmoment.eval(0, ('1','2'), 1))
-    print(cmoment.eval(1, ('1','2'), 0))
-    print(cmoment.eval(1, ('1','2'), 0.5))
-    print(cmoment.eval(1, ('1','2'), 1))
-    print(cmoment.eval(2, ('1','2'), 0))
-    print(cmoment.eval(2, ('1','2'), 0.5))
-    print(cmoment.eval(2, ('1','2'), 1))
-    cmoment.plot(0, ('1', '2'))
-    cmoment.plot(1, ('1', '2'))
-    cmoment.plot(2, ('1', '2'))
+
+    for k in ks:
+        for e in es:
+            for p in ps:
+                print(cmoment.eval(k, e, p))
+
+    #cmoment.plot(0, ('1', '2'))
+    #cmoment.plot(1, ('1', '2'))
+    #cmoment.plot(2, ('1', '2'))
 
 
 # conditional cdf

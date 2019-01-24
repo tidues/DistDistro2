@@ -10,6 +10,51 @@ def readGraph(fpath, gname):
     print('loading graph...')
     return gg.GraphFromFile(fpath, gname).G
 
+def NloadInfo(g, phi_p=None, phi_q=None, phi_pq=None):
+    print('generate basic info...')
+    start = time.time()
+    # make pdfs
+    g.phi_p = phi_p
+    g.phi_q = phi_q
+    g.phi_pq = phi_pq
+    N_gen_phi(g)
+
+    g.moment_info = {}
+    g.cmoment_info = {}
+
+    # index set
+    g.two = (0,1)
+    g.two2 = [(i, j) for i in g.two for j in g.two]
+    end = time.time()
+    print('basic info:', end - start)
+
+    # all pair shortest distance
+    print('get shortest path info')
+    start = time.time()
+    N_get_d(g)
+    end = time.time()
+    print('get_d:', end - start)
+
+# entry info
+def entry_info(g, e, f, le, lf):
+    p1 = None
+    p2 = None
+    q1 = None
+    q2 = None
+    if e == f:
+        d = g.d[e[0]][e[1]]
+    else:
+        d = {}
+        for (i, j) in g.two2:
+            d[i, j] = g.d[e[i]][f[j]]
+        p1 = (-d[0, 0] + d[1, 0] + le) / (2 * le)
+        p2 = (-d[0, 1] + d[1, 1] + le) / (2 * le)
+        q1 = (-d[0, 0] + d[0, 1] + lf) / (2 * lf)
+        q2 = (-d[1, 0] + d[1, 1] + lf) / (2 * lf)
+
+    return(d, p1, p2, q1, q2)
+
+
 # generate all basic infomation
 def loadInfo(g, phi_p=None, phi_q=None, phi_pq=None, rational = False):
 
@@ -30,20 +75,22 @@ def loadInfo(g, phi_p=None, phi_q=None, phi_pq=None, rational = False):
     # index set
     g.two = (0,1)
     g.two2 = [(i, j) for i in g.two for j in g.two]
-
-    # generate ordered edges
-    # g.oedges = []
-    # sort_edges(g)
-
-    # edge lengths
-    g.l = {}
-    g.gx = {}  # the pmf of X
-    g.gy = {}  # the pmf of Y
     end = time.time()
     print('basic info:', end - start)
 
+    ## create entry-wise info
+    #for e in g.edges():
+    #    le = rat(g.edges[e]['l'], g.rat)
+    #    for f in g.edges():
+    #        lf = rat(g.edges[f]['l'], g.rat)
+
+    # edge lengths
     print('load edges properties')
     start = time.time()
+    g.l = {}
+    g.gx = {}  # the pmf of X
+    g.gy = {}  # the pmf of Y
+
     for e in g.edges():
         g.l[e] = rat(g.edges[e]['l'], g.rat)
         g.gx[e] = rat(g.edges[e]['x'], g.rat)
@@ -141,6 +188,27 @@ def gen_phi(g):
     else:
         raise Exception('please provide both phi_p and phi_q, or the joint pdf phi_pq.')
 
+# generate numerica phi
+def N_gen_phi(g):
+    p, q = symbols('p,q')
+    if g.phi_p is not None and g.phi_q is not None:
+        g.phi_p = sympify(g.phi_p)
+        g.phi_q = sympify(g.phi_q)
+        g.phi_pq = g.phi_p * g.phi_q
+        g.phi_qcp = g.phi_q
+    elif g.phi_pq is not None:
+        g.phi_pq = sympify(g.phi_pq)
+        g.phi_p = integrate(g.phi_pq, (q, 0 , 1))
+        g.phi_q = integrate(g.phi_pq, (p, 0 , 1))
+        g.phi_qcp = g.phi_pq / g.phi_p
+    else:
+        raise Exception('please provide both phi_p and phi_q, or the joint pdf phi_pq.')
+
+    g.phi_p = lambdify(p, g.phi_p)
+    g.phi_q = lambdify(q, g.phi_q)
+    g.phi_pq = lambdify((q, p), g.phi_pq)
+    g.phi_qcp = lambdify((q, p), g.phi_qcp)
+
 # get shortest path matrix D
 def get_d(g):
     g.d = dict(nx.all_pairs_dijkstra_path_length(g, weight = 'l'))
@@ -149,6 +217,10 @@ def get_d(g):
         for i in g.nodes():
             for j in g.nodes():
                 g.d[i][j] = rat(g.d[i][j], g.rat)
+
+# get shortest path matrix D
+def N_get_d(g):
+    g.d = dict(nx.all_pairs_dijkstra_path_length(g, weight = 'l'))
 
 # get x bounds info
 def get_ab(e, f, g):

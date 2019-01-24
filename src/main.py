@@ -27,7 +27,7 @@ if switches['cycuni'] == 1:
 
     phi_pq = 1
 
-    bi.loadInfo(g, phi_pq=phi_pq, rational=True)
+    bi.loadInfo(g, phi_pq=phi_pq, rational=False)
     moment = fl.Moment(g)
     m1 = moment.eval(1)
     m2 = moment.eval(2)
@@ -54,7 +54,7 @@ if switches['cycnuni'] == 1:
 
     phi_pq = 36 * p * q * (1-p) * (1-q)
 
-    bi.loadInfo(g, phi_pq=phi_pq, rational=True)
+    bi.loadInfo(g, phi_pq=phi_pq, rational=False)
     moment = fl.Moment(g)
     m1 = moment.eval(1)
     m2 = moment.eval(2)
@@ -80,7 +80,7 @@ if switches['clinuni'] == 1:
 
     phi_pq = 6 * q * (1-q)
 
-    bi.loadInfo(g, phi_pq=phi_pq, rational=True)
+    bi.loadInfo(g, phi_pq=phi_pq, rational=False)
     moment = fl.Moment(g)
     m1 = moment.eval(1)
     m2 = moment.eval(2)
@@ -112,7 +112,7 @@ if switches['clinuni'] == 1:
 if switches['manhatton'] == 1:
     # graph file
     fpath = '../data/'
-    gname = 'planar_side_10'
+    gname = 'planar_side_11'
     g = bi.readGraph(fpath, gname)
 
     g = get_largest_component(g)
@@ -125,11 +125,23 @@ if switches['manhatton'] == 1:
     phi_pq = 1
 
     bi.loadInfo(g, phi_pq=phi_pq, rational=False)
+    moment = fl.Moment(g)
+    m1 = moment.eval(1)
+    m2 = moment.eval(2)
+    m3 = moment.eval(3)
+    print(m1)
+    print(m2)
+    print(m3)
+    print(m2 - m1 ** 2)
+    
+    pdf = fl.PDF(g)
+    pdf.plot()
 
-    e = ('1', '2')
-    p = 0.5
+    es = [('1', '2'), ('6', '7'), ('61', '62'), ('62', '63')]
+    ps = [0, 0, 0, 0.5]
     cpdf = fl.CPDF(g)
-    cpdf.plot(e, p)
+    for idx, e in enumerate(es):
+        cpdf.plot(e, ps[idx])
 
     #moment = fl.Moment(g)
     #m1 = moment.eval(1)

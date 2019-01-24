@@ -1,32 +1,20 @@
 import time
+from sympy import *
+from sympy.abc import x
 
-cnt = 16450
+cnt = 100000
 
-v1 = 0
-v2 = 0
-v3 = 0
-
-start = time.time()
+begin = time.time()
+t = 0
 for i in range(cnt):
-    for j in range(cnt):
-        v1 += i + j
-        v2 += i + j
-        v3 += i + j
+    res = t + 1
 end = time.time()
-print('nested: ', end - start)
-
-start = time.time()
+print('normal:', end - begin)
+    
+begin = time.time()
 for i in range(cnt):
-    for j in range(cnt):
-        v1 += i + j
-
-for i in range(cnt):
-    for j in range(cnt):
-        v2 += i + j
-
-for i in range(cnt):
-    for j in range(cnt):
-        v3 += i + j
+    res = x + 1
 end = time.time()
-print('splited: ', end - start)
-        
+print('sympy:', end - begin)
+
+

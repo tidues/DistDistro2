@@ -31,6 +31,6 @@ def nbr(v, side_nodes):
     return nbrs
 
 
-gen_planar(side_nodes=5)
+gen_planar(side_nodes=11)
 
 
