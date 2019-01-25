@@ -6,7 +6,7 @@ from enums import Stats
 # module test switch
 switches = {
         Stats.MOMENT: 1,
-        Stats.CMOMENT: 0
+        Stats.CMOMENT: 1
         }
 
 

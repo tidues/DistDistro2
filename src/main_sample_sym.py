@@ -13,10 +13,10 @@ from commonFuncs import load_formulas
 
 # module test switch
 switches = {
-        Stats.MOMENT: 1,
+        Stats.MOMENT: 0,
         Stats.CDF: 0,
         Stats.PDF: 0,
-        Stats.CMOMENT: 0,
+        Stats.CMOMENT: 1,
         Stats.CCDF: 0,
         Stats.CPDF: 0,
         Stats.SIMULATION: 0,
@@ -35,7 +35,7 @@ if switches[Stats.SAVE] == 1:
 
 # graph file
 fpath = '../data/'
-gname = 'g0'
+gname = 'g1'
 
 # read graph
 g = bi.readGraph(fpath, gname)
