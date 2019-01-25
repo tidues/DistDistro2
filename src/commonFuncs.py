@@ -4,6 +4,8 @@ from sympy import *
 from sympy.abc import a, b, x
 import dill
 import networkx as nx
+from networkx import is_connected
+from scipy.integrate import dblquad
 
 # symbolic gate function
 #eta = lambda a, b, x: Piecewise((1, (x >= a) & (x <= b)), (0, True))
@@ -197,5 +199,41 @@ def get_largest_component(g):
     else:
         cc = max(nx.connected_components(g), key=len)
         return g.subgraph(cc)
+
+# check basic info of g
+def gcheck(g, eps=1e-7):
+    # is connected
+    is_con = is_connected(g)
+    # is p_x add up to 1
+    px_tot = 0
+    py_tot = 0
+    # tolorence
+    for e in g.edges():
+        px_tot += g.edges[e]['x']
+        py_tot += g.edges[e]['y']
+
+    if abs(px_tot - 1) < eps:
+        px_one = True
+    else:
+        px_one = False
+
+    if abs(py_tot - 1) < eps:
+        py_one = True
+    else:
+        py_one = False
+
+    phi_tot = dblquad(g.phi_pq_N, 0, 1, lambda p: 0, lambda p: 1)[0]
+    if abs(phi_tot - 1) < eps:
+        phi_one = True
+    else:
+        phi_one = False
+
+    return {'connected': is_con, 
+            'px_one': px_one, 
+            'py_one': py_one, 
+            'phi_one': phi_one,
+            'total': (is_con and px_one and py_one and phi_one)}
+
+
 
 

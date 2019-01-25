@@ -1,27 +1,22 @@
 import basicInfo as bi
 import Nformulas as fl
-from networkx import is_connected
 from enums import Stats
 import time
+from commonFuncs import gcheck
 
 # module test switch
 switches = {
-        Stats.MOMENT: 0,
-        Stats.CMOMENT: 1
+        Stats.MOMENT: 1,
+        Stats.CMOMENT: 0
         }
 
 
 # graph file
 fpath = '../data/'
-gname = 'g1'
+gname = 'planar_side_10'
 
 # read graph
 g = bi.readGraph(fpath, gname)
-
-# connected test
-print('is connected: ', is_connected(g))
-
-# or independent pdfs phi_p and phi_q
 
 phi_pq = 1
 # phi_pq = 4 * p * q
@@ -29,13 +24,23 @@ phi_pq = 1
 # load basic info
 bi.NloadInfo(g, phi_pq=phi_pq)
 
+# check all status
+check_res = gcheck(g)
+if check_res['total'] is not True:
+    print(check_res)
+
 # moments stats
 if switches[Stats.MOMENT] == 1:
     moment = fl.NMoment(g)
-    # print(moment.eval(0))
-    print(moment.eval(1))
-    print(moment.eval(2))
-    print(moment.eval(3))
+    m0 = moment.eval(0)
+    print(m0)
+    m1 = moment.eval(1)
+    print(m1)
+    m2 = moment.eval(2)
+    print(m2)
+    m3 = moment.eval(3)
+    print(m3)
+    print(m2 - m1 ** 2)
     #print(moment.eval(1))
     #print(moment.eval(2))
 

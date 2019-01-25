@@ -16,7 +16,8 @@ switches = {
         'cycuni': 0,
         'cycnuni': 0,
         'clinuni': 0,
-        'manhatton': 1
+        'grid11': 1,
+        'manhatton': 0
         }
 
 if switches['cycuni'] == 1:
@@ -44,7 +45,6 @@ if switches['cycuni'] == 1:
     pdf = fl.PDF(g)
     #print(pdf.formula())
     pdf.plot()
-
 
 if switches['cycnuni'] == 1:
     # graph file
@@ -108,6 +108,39 @@ if switches['clinuni'] == 1:
     p = 0
     cpdf = fl.CPDF(g)
     cpdf.plot(e, p)
+
+if switches['grid11'] == 1:
+    # graph file
+    fpath = '../data/'
+    gname = 'planar_side_10'
+
+    #gname = 'g0'
+    g = bi.readGraph(fpath, gname)
+
+    phi_pq = 1
+
+    bi.loadInfo(g, phi_pq=phi_pq, rational=False)
+    moment = fl.Moment(g)
+    m0 = moment.eval(0)
+    m1 = moment.eval(1)
+    m2 = moment.eval(2)
+    m3 = moment.eval(3)
+    print(m0)
+    print(m1)
+    print(m2)
+    print(m3)
+    print(m2 - m1 ** 2)
+
+    pdf = fl.PDF(g)
+    #print(pdf.formula())
+    pdf.plot()
+
+    #es = [('1', '2'), ('2', '3'), ('3', '4'), ('1', '2')]
+    es = [('1', '2'), ('5', '6'), ('45', '46')]
+    ps = [0, 0.5, 0.5]
+    cpdf = fl.CPDF(g)
+    for idx, e in enumerate(es):
+        cpdf.plot(e, ps[idx])
 
 if switches['manhatton'] == 1:
     # graph file

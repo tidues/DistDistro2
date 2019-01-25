@@ -17,8 +17,12 @@ class RegionBase:
         self.pu = sympify(pu)
         if ql is not None:
             self.ql = sympify(ql)
+        else:
+            self.ql = None
         if qu is not None:
             self.qu = sympify(qu)
+        else:
+            self.qu = None
         self.sgn = sgn
         self.eta = eta
         self.a = a

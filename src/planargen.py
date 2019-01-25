@@ -2,6 +2,7 @@
 def gen_planar(side_nodes = 10):
     text = ''
     maxv = side_nodes ** 2
+    tote = maxv * 2 - 2 * side_nodes
     vers = range(1, maxv + 1)
     text = 'i\tj\tl\tx\ty\n'
     for v in vers:
@@ -10,8 +11,8 @@ def gen_planar(side_nodes = 10):
                     str(v) + '\t' + 
                     str(u) + '\t' + 
                     str(1) + '\t' + 
-                    str(1.0/maxv) + '\t'+ 
-                    str(1.0/maxv) + '\n'
+                    str(1.0/tote) + '\t'+ 
+                    str(1.0/tote) + '\n'
                     )
 
     wf = open('planar_side_'+str(side_nodes)+'.dat', 'w')
@@ -31,6 +32,6 @@ def nbr(v, side_nodes):
     return nbrs
 
 
-gen_planar(side_nodes=11)
+gen_planar(side_nodes=10)
 
 

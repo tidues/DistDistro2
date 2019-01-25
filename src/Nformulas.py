@@ -12,8 +12,7 @@ class NMoment:
         alphas = cf.A_curl(2, k)
         res = 0
         cnt = 0
-        enum = g.number_of_edges()
-        tot = (enum ** 2 - enum)/2.0 + enum
+        tot = g.number_of_edges() ** 2
         t0 = time.time()
 
         for e in g.edges():
@@ -21,39 +20,35 @@ class NMoment:
             le = float(g.edges[e]['l'])
             px = float(g.edges[e]['x'])
             for f in g.edges():
-                if e <= f:
-                    # display progress
-                    cnt += 1
-                    t1 = time.time()
-                    if t1 - t0 > dis_time:
-                        print('progress:\t%0.4f%%' % (cnt/tot * 100))
-                        t0 = t1
+                # display progress
+                cnt += 1
+                t1 = time.time()
+                if t1 - t0 > dis_time:
+                    print('progress:\t%0.4f%%' % (cnt/tot * 100))
+                    t0 = t1
 
-                    # get f related info
-                    lf = float(g.edges[f]['l'])
-                    py = float(g.edges[f]['y'])
-                    # get entry ef related info
-                    d, p1, p2, q1, q2 = bi.entry_info(self.g, e, f, le, lf)
-                    for (i, j) in g.two2:
-                        # get region related info
-                        R = get_R(self.g, e, f, i, j, le, lf, d, p1, p2, q1, q2)
+                # get f related info
+                lf = float(g.edges[f]['l'])
+                py = float(g.edges[f]['y'])
+                # get entry ef related info
+                d, p1, p2, q1, q2 = bi.entry_info(self.g, e, f, le, lf)
+                for (i, j) in g.two2:
+                    # get region related info
+                    R = get_R(self.g, e, f, i, j, le, lf, d, p1, p2, q1, q2)
 
-                        # get alpha related info
-                        for alpha in alphas:
-                            c0 = cf.ncrs(k, alpha) * px * py * lf ** alpha[0] * le ** alpha[1]
-                            if e == f:
-                                w = (i + j + 1) * alpha[0] + (i + j + 2) * alpha[1]
-                                c1 = (-1) ** w * (i * (d + le)) ** (k - alpha[0] - alpha[1])
-                            else:
-                                w = j *  alpha[0] + i * alpha[1]
-                                c1 = (-1) ** w * (d[i, j] + i * le + j * lf) ** (k - alpha[0] - alpha[1])
-                            c = c0 * c1
-                            func = lambda q, p: q ** alpha[0] * p ** alpha[1] * g.phi_pq(q, p)
-                            m = R.m(func)
-                            if e == f:
-                                res += c * m
-                            else:
-                                res += 2 * c * m
+                    # get alpha related info
+                    for alpha in alphas:
+                        c0 = cf.ncrs(k, alpha) * px * py * lf ** alpha[0] * le ** alpha[1]
+                        if e == f:
+                            w = (i + j + 1) * alpha[0] + (i + j + 2) * alpha[1]
+                            c1 = (-1) ** w * (i * (d + le)) ** (k - alpha[0] - alpha[1])
+                        else:
+                            w = j *  alpha[0] + i * alpha[1]
+                            c1 = (-1) ** w * (d[i, j] + i * le + j * lf) ** (k - alpha[0] - alpha[1])
+                        c = c0 * c1
+                        func = lambda q, p: q ** alpha[0] * p ** alpha[1] * g.phi_pq(q, p)
+                        m = R.m(func)
+                        res += c * m
         return res
 
 

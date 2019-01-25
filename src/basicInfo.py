@@ -187,6 +187,7 @@ def gen_phi(g):
         g.phi_q = integrate(g.phi_pq, (p, 0 , 1))
     else:
         raise Exception('please provide both phi_p and phi_q, or the joint pdf phi_pq.')
+    g.phi_pq_N = lambdify((q, p), g.phi_pq)
 
 # generate numerica phi
 def N_gen_phi(g):
@@ -207,6 +208,7 @@ def N_gen_phi(g):
     g.phi_p = lambdify(p, g.phi_p)
     g.phi_q = lambdify(q, g.phi_q)
     g.phi_pq = lambdify((q, p), g.phi_pq)
+    g.phi_pq_N = g.phi_pq
     g.phi_qcp = lambdify((q, p), g.phi_qcp)
 
 # get shortest path matrix D
