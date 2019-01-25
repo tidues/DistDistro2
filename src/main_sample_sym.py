@@ -16,8 +16,8 @@ switches = {
         Stats.MOMENT: 0,
         Stats.CDF: 0,
         Stats.PDF: 0,
-        Stats.CMOMENT: 1,
-        Stats.CCDF: 0,
+        Stats.CMOMENT: 0,
+        Stats.CCDF: 1,
         Stats.CPDF: 0,
         Stats.SIMULATION: 0,
         Stats.SAVE: 0,
@@ -35,7 +35,7 @@ if switches[Stats.SAVE] == 1:
 
 # graph file
 fpath = '../data/'
-gname = 'g1'
+gname = 'g0'
 
 # read graph
 g = bi.readGraph(fpath, gname)
@@ -63,12 +63,9 @@ if switches[Stats.SIMULATION] == 1:
 # moments stats
 if switches[Stats.MOMENT] == 1:
     moment = fl.Moment(g)
-    print(moment.eval(0))
-    #moment.eval(1)
-    #print(moment.mat_M)
-    print(moment.eval(1))
-    print(moment.eval(2))
-    print(moment.eval(3))
+    vals = [0, 1, 2, 3]
+    for v in vals:
+        print(moment.eval(v))
     #sm = moment.save()
     #print(sm.eval(1))
     #print(sm.eval(2))
@@ -77,11 +74,14 @@ if switches[Stats.MOMENT] == 1:
 # cdf stats
 if switches[Stats.CDF] == 1:
     cdf = fl.CDF(g)
-    cdf.formula()
-    cdf.plot()
-    cdf.save()
-    mcdf = load_formulas(Stats.CDF)
-    cdf.plot()
+    vals = [0, 0.5, 1, 3, 5]
+    for v in vals:
+        print(cdf.eval(v))
+    #cdf.formula()
+    #cdf.plot()
+    #cdf.save()
+    #mcdf = load_formulas(Stats.CDF)
+    #cdf.plot()
     
 
 # pdf stats
@@ -112,15 +112,23 @@ if switches[Stats.CMOMENT] == 1:
 
 # conditional cdf
 if switches[Stats.CCDF] == 1:
-    e = ('1', '2')
-    f = ('2', '3')
     ccdf = fl.CCDF(g)
-    ccdf.plot(e, 0)
-    ccdf.plot(e, 0.2)
-    ccdf.plot(e, 0.4)
-    ccdf.plot(e, 0.5)
-    ccdf.plot(e, 0.8)
-    ccdf.plot(e, 1)
+    es = [('1', '2')]
+    ps = [0, 0.5, 1]
+    xs = [0, 0.5, 1, 3, 5]
+
+    for e in es:
+        for p in ps:
+            for x in xs:
+                print(ccdf.eval(e, p, x))
+    #e = ('1', '2')
+    #f = ('2', '3')
+    #ccdf.plot(e, 0)
+    #ccdf.plot(e, 0.2)
+    #ccdf.plot(e, 0.4)
+    #ccdf.plot(e, 0.5)
+    #ccdf.plot(e, 0.8)
+    #ccdf.plot(e, 1)
 
 # conditional pdf
 if switches[Stats.CPDF] == 1:

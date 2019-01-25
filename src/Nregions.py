@@ -1,7 +1,7 @@
 import Nregion as rg
 from numericFuncs import theta
 
-def get_R(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val=None):
+def get_R(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
     # case e == f
     if e == f:
         if i == 0:
