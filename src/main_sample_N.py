@@ -1,8 +1,7 @@
 import basicInfo as bi
 import Nformulas as fl
 from enums import Stats
-import time
-from commonFuncs import gcheck
+# from commonFuncs import gcheck
 
 # module test switch
 switches = {
@@ -13,7 +12,7 @@ switches = {
 
 # graph file
 fpath = '../data/'
-gname = 'planar_side_10'
+gname = 'planar_side_5'
 
 # read graph
 g = bi.readGraph(fpath, gname)
@@ -24,10 +23,10 @@ phi_pq = 1
 # load basic info
 bi.NloadInfo(g, phi_pq=phi_pq)
 
-# check all status
-check_res = gcheck(g)
-if check_res['total'] is not True:
-    print(check_res)
+## check all status
+#check_res = gcheck(g)
+#if check_res['total'] is not True:
+#    print(check_res)
 
 # moments stats
 if switches[Stats.MOMENT] == 1:

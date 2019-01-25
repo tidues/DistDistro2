@@ -19,6 +19,11 @@ def NloadInfo(g, phi_p=None, phi_q=None, phi_pq=None):
     g.phi_pq = phi_pq
     N_gen_phi(g)
 
+    # check graph info
+    check_res = gcheck(g)
+    if check_res['total'] is not True:
+        raise Exception('Input did not pass all test: ', check_res)
+
     g.moment_info = {}
     g.cmoment_info = {}
 
@@ -65,6 +70,11 @@ def loadInfo(g, phi_p=None, phi_q=None, phi_pq=None, rational = False):
     g.phi_q = phi_q
     g.phi_pq = phi_pq
     gen_phi(g)
+
+    # check graph info
+    check_res = gcheck(g)
+    if check_res['total'] is not True:
+        raise Exception('Input did not pass all test: ', check_res)
 
     g.moment_info = {}
     g.cmoment_info = {}
