@@ -37,7 +37,7 @@ class NFormulas:
         res = 0
 
         # see progress
-        prog = Progress(g.number_of_edges() ** 2)
+        prog = Progress(g.number_of_edges() ** 2, response_time=10)
 
         # treat conditional
         if e is not None:

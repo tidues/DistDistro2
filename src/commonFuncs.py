@@ -197,8 +197,18 @@ def get_largest_component(g):
     if nx.is_connected(g):
         return g
     else:
-        cc = max(nx.connected_components(g), key=len)
-        return g.subgraph(cc)
+        g = g.subgraph(max(nx.connected_components(g), key=len))
+        prob_rescale(g, 'x')
+        prob_rescale(g, 'y')
+        return g
+
+# rescale prob
+def prob_rescale(g, prop):
+    tot = 0.0
+    for e in g.edges():
+        tot += g.edges[e][prop]
+    for e in g.edges():
+        g.edges[e][prop] = g.edges[e][prop] / tot
 
 # check basic info of g
 def gcheck(g, eps=1e-7):
@@ -229,9 +239,9 @@ def gcheck(g, eps=1e-7):
         phi_one = False
 
     return {'connected': is_con, 
-            'px_one': px_one, 
-            'py_one': py_one, 
-            'phi_one': phi_one,
+            'px_one': (px_one, float(px_tot)), 
+            'py_one': (py_one, float(py_tot)),
+            'phi_one': (phi_one, float(phi_tot)),
             'total': (is_con and px_one and py_one and phi_one)}
 
 
