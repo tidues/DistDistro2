@@ -1,7 +1,6 @@
-import basicInfo as bi
-import Nformulas as fl
-from enums import Stats
+import randist as rt
 # from commonFuncs import gcheck
+Stats = rt.Stats
 
 # module test switch
 switches = {
@@ -13,35 +12,30 @@ switches = {
 
 
 # graph file
-fpath = '../data/'
-gname = 'g0'
-
-# read graph
-g = bi.readGraph(fpath, gname)
+gname = 'g3'
 
 phi_pq = 1
 # phi_pq = 4 * p * q
 
-# load basic info
-bi.NloadInfo(g, phi_pq=phi_pq)
+fls = rt.Formulas(gname, phi_pq=phi_pq)
 
 # moments stats
 if switches[Stats.MOMENT] == 1:
-    moment = fl.NMoment(g)
+    moment = fls.get_formula(Stats.MOMENT)
     vals = [0, 1, 2, 3]
     for v in vals:
         print(moment.eval(v))
 
 # cdf stats
 if switches[Stats.CDF] == 1:
-    cdf = fl.NCDF(g)
+    cdf = fls.get_formula(Stats.CDF, symbolic=False)
     vals = [0, 0.5, 1, 3, 5]
     for v in vals:
         print(cdf.eval(v))
 
 # conditional moments stats
 if switches[Stats.CMOMENT] == 1:
-    cmoment = fl.NCMoment(g)
+    cmoment = fls.get_formula(Stats.CMOMENT)
     ks = [0, 1, 2]
     es = [('1', '2')]
     ps = [0, 0.5, 1]
@@ -53,7 +47,7 @@ if switches[Stats.CMOMENT] == 1:
 
 # conditional cdf stats
 if switches[Stats.CCDF] == 1:
-    ccdf = fl.NCCDF(g)
+    ccdf = fls.get_formula(Stats.CCDF, symbolic=False)
     es = [('1', '2')]
     ps = [0, 0.5, 1]
     xs = [0, 0.5, 1, 3, 5]

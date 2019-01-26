@@ -1,4 +1,0 @@
-1. exp, cexp numerical
-2. all evaluation numerical
-3. use entry-wise method to create formulas
-4. reduce the operations in tR
