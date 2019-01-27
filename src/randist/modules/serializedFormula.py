@@ -19,33 +19,49 @@ class SFormula:
     def eval(self, *params):
         # split params into keys and vals
         keys, subval, vals = self.__split_input(*params)
-        keys = self.mkkey(keys)
-        if keys in self.N_fs:
-            myf = self.N_fs[keys]
-            return self.__apply(myf, vals)
+        if keys == self.unikey:
+            unikey = (self.unikey,)
+            if unikey in self.N_fs:
+                N_f = self.N_fs[unikey]
+            else:
+                print('This function does not exist!')
+                return False
         else:
-            print('This function does not exist!')
-            return False
+            if keys in self.N_fs:
+                N_f = self.N_fs[keys]
+            else:
+                print('This function does not exist!')
+                return False
+
+        return self.__apply(N_f, vals)
 
     # output the formula
     def formula(self, *params):
         # split params into keys and vals
         keys, subval, vals = self.__split_input(*params)
-        keys = self.mkkey(keys)
-
-        if keys in self.fs:
-            myf = self.fs[keys]
-            return self.__subs(myf, subval)
+        if keys == self.unikey:
+            unikey = (self.unikey,)
+            if unikey in self.fs:
+                myf = self.fs[unikey]
+                return self.__subs(myf, subval)
+            else:
+                print('This function does not exist!')
+                return False
         else:
-            print('This function does not exist!')
-            return False
+            if keys in self.fs:
+                myf = self.fs[keys]
+                return self.__subs(myf, subval)
+            else:
+                print('This function does not exist!')
+                return False
 
     # input f_info = (f, var, lb, ub)
     def plot(self, *params, step=0.01, show=True):
         if self.stat != Stats.MOMENT:
+            unikey = (self.unikey,)
             if len(params) == 0:
-                if self.unikey in self.fs:
-                    f = self.fs[self.unikey]
+                if unikey in self.fs:
+                    f = self.fs[unikey]
                 else:
                     print('This function does not exist!')
                     return False
@@ -76,10 +92,7 @@ class SFormula:
             return f(*vals)
 
     def mkkey(self, keys):
-        if len(keys) == 1:
-            return keys[0]
-        else:
-            return keys
+        return keys
 
     def __split_input(self, *params):
         if self.idx_num == 0:

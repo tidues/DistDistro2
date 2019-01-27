@@ -181,6 +181,7 @@ if __name__ == '__main__':
 # stat from enums
 def load_formulas(gname, phiname, stat, folder='./.formulas/'):
     path = folder + gname + '_' + phiname + '_' + str(stat) + '.sav'
+    dill.load(open(path, 'rb'))
     try:
         return dill.load(open(path, 'rb'))
     except:

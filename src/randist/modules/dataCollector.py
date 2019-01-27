@@ -1,4 +1,5 @@
 from .formulas import Formulas
+from .enums import Stats
 
 # info_dict keys and values
 # moment: ks; cdf: nothing; pdf: nothing;

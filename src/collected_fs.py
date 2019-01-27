@@ -17,8 +17,12 @@ if switches['test'] == 1:
     gname = 'g0'
     phiname = 'uniform'
     cdf = rt.load_formulas(gname, phiname, Stats.CDF)
+    print(cdf.eval(5))
+    #print(cdf.formula())
     cdf.plot()
     pdf = rt.load_formulas(gname, phiname, Stats.PDF)
+    print(pdf.eval(5))
+    #print(pdf.formula())
     pdf.plot()
     loc1 = (('1', '2'), 0.2)
     loc2 = (('1', '3'), 0.5)
@@ -26,9 +30,13 @@ if switches['test'] == 1:
     locs = [loc1, loc2, loc3]
     ccdf = rt.load_formulas(gname, phiname, Stats.CCDF)
     for loc in locs:
+        print(ccdf.eval(*loc, 5))
+        #print(ccdf.formula(*loc))
         ccdf.plot(*loc)
     cpdf = rt.load_formulas(gname, phiname, Stats.CPDF)
     for loc in locs:
+        print(cpdf.eval(*loc, 5))
+        #print(cpdf.formula(*loc))
         cpdf.plot(*loc)
 
 if switches['cycuni'] == 1:
