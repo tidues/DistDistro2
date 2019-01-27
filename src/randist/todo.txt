@@ -1,11 +1,8 @@
 Current tasks:
-1. save() and load() for all formulas, including save path
-2. save all previous pdf and cdfs as files
-3. save all outputs and pics
 4. optimize the symbolic part
-5. clean manhattan data
 6. run and collect manhattan conditional stats
 7. run and collect manhattan unconditional exp and var
+8. create package, add readme
 
 Future functionalities:
 1. numerical PDF and CPDF

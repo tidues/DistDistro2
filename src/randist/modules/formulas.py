@@ -7,6 +7,7 @@ from .plot import plot1d
 from .serializedFormula import *
 import os
 import dill
+from .pyprelude import EasyWriter as ew
 
 
 class Formula:
@@ -21,10 +22,11 @@ class Formula:
         self.plot_info = (None, x, -1, self.g.d_max + 1)  # plotting parameters
         self.unikey = 'zero'
         self.folder = './.formulas/'
+        self.resfolder = './results/'
         self.fullsave = None
 
     # evaluation
-    def eval(self, *params):
+    def eval(self,  *params, save=True):
         # split params into keys and vals
         keys, subval, vals = self.__split_input(*params)
 
@@ -34,7 +36,14 @@ class Formula:
         myf = self.get_N_fs(self.mkkey(keys))
 
         # select formula then return the evaluation
-        return self.__apply(myf, vals)
+        res = self.__apply(myf, vals)
+        if save:
+            g = self.g
+            fname = self.resfolder + g.name + '_' + g.phi.name + '_' + str(self.stat) + '.dat'
+            val = str(params) + '\t' + str(res) + '\n'
+            ew.wFile(fname, val)
+            
+        return res
         # return self.__subs(self.fs[self.mkkey(keys)], subval)
 
     # lambdify
@@ -59,7 +68,7 @@ class Formula:
         return self.__subs(self.fs[self.mkkey(keys)], subval)
 
     # input f_info = (f, var, lb, ub)
-    def plot(self, *params, step=0.01):
+    def plot(self, *params, step=0.01, save=True, show=False):
         if self.stat != Stats.MOMENT:
             if len(params) == 0:
                 self.gen_formula()
@@ -75,13 +84,19 @@ class Formula:
             ub = self.plot_info[3]
 
             f_lambda = lambdify(var, f, modules=self.mods)
-            plot1d(f_lambda, lb, ub, step)
+
+            if save:
+                g = self.g
+                figname = self.resfolder + g.name + '_' + g.phi.name + '_' + str(self.stat) + '_' + str(params) + '.png'
+                plot1d(f_lambda, lb, ub, step, svname=figname, show=show)
+            else:
+                plot1d(f_lambda, lb, ub, step, show=show)
 
         else:
             print('moment function cannot be plotted.')
 
     # save formula
-    def save(self):
+    def save_formulas(self):
         sf = SFormula()
         sf.stat = self.stat
         sf.fs = self.fs
@@ -166,7 +181,7 @@ class Formula:
 
     # make save name
     def mksvname(self):
-        self.fullsave = self.folder + str(self.stat) + '.sav'
+        self.fullsave = self.folder + self.g.name + '_' + self.g.phi.name + '_' + str(self.stat) + '.sav'
 
     
 class Moment(Formula):

@@ -3,6 +3,8 @@ import errno
 
 
 # function write file
+# help create folders recursively if doesn't exist
+# support append as well as write
 def wFile(ffname, output, writetype='a'):
     dirname = os.path.dirname(ffname)
     if not os.path.exists(dirname):

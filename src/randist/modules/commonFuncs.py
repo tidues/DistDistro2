@@ -1,4 +1,5 @@
 from .pyprelude import FPToolBox as fp
+from .pyprelude import TableWriter as tw
 from math import factorial
 from sympy import *
 from sympy.abc import a, b, x
@@ -185,21 +186,37 @@ if __name__ == '__main__':
 
 # load serialized formulas
 # stat from enums
-def load_formulas(stat, folder='./.formulas/'):
-    path = folder + str(stat) + '.sav'
+def load_formulas(gname, phiname, stat, folder='./.formulas/'):
+    path = folder + gname + '_' + phiname + '_' + str(stat) + '.sav'
     try:
         return dill.load(open(path, 'rb'))
     except:
-        print('formula does not exist')
+        return None
 
 # get largets components
-def get_largest_component(g):
+def get_largest_component(g, save=True):
     if nx.is_connected(g):
         return g
     else:
         g = g.subgraph(max(nx.connected_components(g), key=len))
         prob_rescale(g, 'x')
         prob_rescale(g, 'y')
+        if save:
+            output = []
+            head = ['i', 'j', 'l', 'x', 'y']
+            output.append(head)
+            for e in g.edges():
+                erow = []
+                e0 = min(int(e[0]), int(e[1]))
+                e1 = max(int(e[0]), int(e[1]))
+                erow.append(e0)
+                erow.append(e1)
+                erow.append(float(g.edges[e]['l']))
+                erow.append(float(g.edges[e]['x']))
+                erow.append(float(g.edges[e]['y']))
+                output.append(erow)
+            tw.tableWrite(output, './' + g.name + '_cc.dat', formatType='n')
+
         return g
 
 # rescale prob
@@ -232,17 +249,10 @@ def gcheck(g, eps=1e-7):
     else:
         py_one = False
 
-    phi_tot = dblquad(g.phi_pq_N, 0, 1, lambda p: 0, lambda p: 1)[0]
-    if abs(phi_tot - 1) < eps:
-        phi_one = True
-    else:
-        phi_one = False
-
     return {'connected': is_con, 
             'px_one': (px_one, float(px_tot)), 
             'py_one': (py_one, float(py_tot)),
-            'phi_one': (phi_one, float(phi_tot)),
-            'total': (is_con and px_one and py_one and phi_one)}
+            'total': (is_con and px_one and py_one)}
 
 
 

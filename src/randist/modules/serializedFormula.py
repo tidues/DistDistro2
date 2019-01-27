@@ -41,7 +41,7 @@ class SFormula:
             return False
 
     # input f_info = (f, var, lb, ub)
-    def plot(self, *params, step=0.01):
+    def plot(self, *params, step=0.01, show=True):
         if self.stat != Stats.MOMENT:
             if len(params) == 0:
                 if self.unikey in self.fs:
@@ -64,7 +64,7 @@ class SFormula:
             ub = self.plot_info[3]
 
             f_lambda = lambdify(var, f, modules=self.mods)
-            plot1d(f_lambda, lb, ub, step)
+            plot1d(f_lambda, lb, ub, step, show=True)
 
         else:
             print('moment function cannot be plotted.')

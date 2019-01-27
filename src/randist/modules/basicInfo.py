@@ -9,15 +9,14 @@ import time
 # reads a graph input file
 def readGraph(fpath, gname):
     print('loading graph...')
-    return gg.GraphFromFile(fpath, gname).G
+    g = gg.GraphFromFile(fpath, gname).G
+    g.name = gname
+    return g
 
-def basicInfo(g, phi_p=None, phi_q=None, phi_pq=None, rational=False):
+def basicInfo(g, phi, rational=False):
     print('generate basic info...')
     g.rat = rational
-    g.phi_p_S = phi_p
-    g.phi_q_S = phi_q
-    g.phi_pq_S = phi_pq
-    gen_phi(g)
+    g.phi = phi
 
     # check graph info
     check_res = gcheck(g)
@@ -140,29 +139,6 @@ def update_phi(phi):
 #########################################################################
 # help functions                                                        #
 #########################################################################
-
-# sort edges
-#def sort_edges(g):
-#    for e in g.edges():
-#        g.oedges.append(e_repr(e))
-
-# generate all phis
-def gen_phi(g):
-    if g.phi_p_S is not None and g.phi_q_S is not None:
-        g.phi_p_S = sympify(g.phi_p_S)
-        g.phi_q_S = sympify(g.phi_q_S)
-        g.phi_pq_S = g.phi_p_S * g.phi_q_S
-        g.phi_qcp_S = g.phi_q_S
-    elif g.phi_pq_S is not None:
-        g.phi_pq_S = sympify(g.phi_pq_S)
-        p, q = symbols('p,q')
-        g.phi_p_S = integrate(g.phi_pq_S, (q, 0 , 1))
-        g.phi_q_S = integrate(g.phi_pq_S, (p, 0 , 1))
-        g.phi_qcp_S = g.phi_pq_S / g.phi_p_S
-    else:
-        raise Exception('please provide both phi_p and phi_q, or the joint pdf phi_pq.')
-    g.phi_pq_N = lambdify((q, p), g.phi_pq_S)
-
 
 # get shortest path matrix D
 def get_d(g):

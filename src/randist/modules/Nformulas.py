@@ -3,12 +3,16 @@ from . import basicInfo as bi
 from .Nregions import get_R
 from .pyprelude.Timer import Timer
 from .pyprelude.Progress import Progress
+from .pyprelude import EasyWriter as ew
+from .enums import Stats
 
 
 # template for all region-wise operations
 class NFormulas:
-    def __init__(self):
+    def __init__(self, g):
         self.g = None
+        self.stat = None
+        self.resfolder = './results/'
 
     def cond_ep(self, g, e, p_val, x_val, prog, **params):
         res = 0
@@ -50,10 +54,18 @@ class NFormulas:
     def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, **params):
         pass
 
+    def save_res(self, keys, res):
+        g = self.g
+        fname = self.resfolder + g.name + '_' + g.phi.name + '_' + str(self.stat) + '.dat'
+        val = str(keys) + '\t' + str(res) + '\n'
+        ew.wFile(fname, val)
+
 
 class NMoment(NFormulas):
     def __init__(self, g):
+        super().__init__(g)
         self.g = g
+        self.stat = Stats.MOMENT
 
     def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, **params):
         alphas = params['alphas']
@@ -76,25 +88,35 @@ class NMoment(NFormulas):
             res += c * m
         return res
 
-    def eval(self, k):
+    def eval(self, k, save=True):
         alphas = cf.A_curl(2, k)
-        return self.cond_region(alphas=alphas, k=k)
+        res = self.cond_region(alphas=alphas, k=k)
+        if save:
+            self.save_res(k, res)
+        return res
 
 
 class NCDF(NFormulas):
     def __init__(self, g):
+        super().__init__(g)
         self.g = g
+        self.stat = Stats.CDF
 
     def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, **params):
         return px * py * R.m(g.phi_pq)
 
-    def eval(self, x_val):
-        return self.cond_region(x_val=x_val)
+    def eval(self, x_val, save=True):
+        res = self.cond_region(x_val=x_val)
+        if save:
+            self.save_res(x_val, res)
+        return res
 
 
 class NCMoment(NFormulas):
     def __init__(self, g):
+        super().__init__(g)
         self.g = g
+        self.stat = Stats.CMOMENT
 
     def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, **params):
         alphas = params['alphas']
@@ -117,19 +139,26 @@ class NCMoment(NFormulas):
 
         return res
 
-
-    def eval(self, k, e, p_val):
+    def eval(self, k, e, p_val, save=True):
         alphas = cf.A_curl(2, k)
-        return self.cond_region(e=e, p_val=p_val, k=k, alphas=alphas)
+        res = self.cond_region(e=e, p_val=p_val, k=k, alphas=alphas)
+        if save:
+            self.save_res((k, e, p_val), res)
+        return res
 
 
 class NCCDF(NFormulas):
     def __init__(self, g):
+        super().__init__(g)
         self.g = g
+        self.stat = Stats.CCDF
 
     def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, **params):
         func = lambda q: g.phi_qcp(q, p_val)
         return py * R.m_p(func, p_val)
 
-    def eval(self, e, p_val, x_val):
-        return self.cond_region(e=e, p_val=p_val, x_val=x_val)
+    def eval(self, e, p_val, x_val, save=True):
+        res = self.cond_region(e=e, p_val=p_val, x_val=x_val)
+        if save:
+            self.save_res((e, p_val, x_val), res)
+        return res

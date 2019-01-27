@@ -4,9 +4,9 @@ Stats = rt.Stats
 
 # module test switch
 switches = {
-        Stats.MOMENT: 0,
-        Stats.CDF: 0,
-        Stats.CMOMENT: 0,
+        Stats.MOMENT: 1,
+        Stats.CDF: 1,
+        Stats.CMOMENT: 1,
         Stats.CCDF: 1
         }
 
@@ -14,10 +14,10 @@ switches = {
 # graph file
 gname = 'g3'
 
-phi_pq = 1
+phi = rt.Phi('uniform', phi_pq=1)
 # phi_pq = 4 * p * q
 
-fls = rt.Formulas(gname, phi_pq=phi_pq)
+fls = rt.Formulas(gname, phi)
 
 # moments stats
 if switches[Stats.MOMENT] == 1:
