@@ -129,11 +129,24 @@ class Formula:
         p_dict = {}
         for idx, v in enumerate(params):
             if idx < len(self.keys):
+                # use limits instead of undefined p value
+                if self.keys[idx] == 'p_val':
+                    v = self.adj_p_val(v)
                 p_dict[self.keys[idx]] = v
             else:
                 break
         return p_dict
 
+    # use limit to replace undefined p
+    def adj_p_val(self, p_val, eps=1e-7):
+        if p_val > 0 and p_val < 1:
+            return p_val
+        elif p_val == 0:
+            return eps
+        elif p_val == 1:
+            return 1 - eps
+        else:
+            raise Exception('p_val has to be in [0, 1]')
 
     ### abstract methods
     # operations in each region
@@ -201,6 +214,7 @@ class PDF(Formula):
         self.symbolic = symbolic
         self.keys = ['x_val']
         self.idx_num = 0
+        self.sym_num_env(symbolic)
 
     def get_func(self, q_func, g):
         if self.symbolic:
@@ -211,7 +225,7 @@ class PDF(Formula):
         return func
 
     def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas):
-        c = eta(R.a_val, R.b_val, x_val)
+        c = self.eta(R.a_val, R.b_val, x_val)
         L = self.get_L(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val)
         q_func = self.get_q(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val)
         phis = self.get_func(q_func, g)
@@ -311,7 +325,7 @@ class CPDF(Formula):
             myeta = self.eta
         c1 = myeta(L.pl, L.pu, p_val)
         phis = self.get_func(g, q_func, p_val)
-        return c0 * c1 * m
+        return c0 * c1 * phis
 
 
 # the interface for numerical computation
@@ -327,6 +341,7 @@ class Numeric:
         res = self.formula.cond_region(**p_dict)
         if save:
             self.formula.save_res(params, res)
+        return res
 
 
 # the interface for symbolic computation

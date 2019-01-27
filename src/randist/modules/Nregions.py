@@ -56,13 +56,13 @@ def get_L(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
             x_val = b
         xp = theta(a, b, x_val)
         if (i, j) == (0, 0):
-            r = rg.RegionBase(xp/le, 1, None, None)
+            r = rg.RegionBase(xp/le, 1, None, None, x_val)
         elif (i, j) == (0, 1):
-            r = rg.RegionBase(0, 1 - xp/le, None, None)
+            r = rg.RegionBase(0, 1 - xp/le, None, None, x_val)
         elif (i, j) == (1, 0):
-            r = rg.RegionBase(1 - (xp - d)/le, 1, None, None)
+            r = rg.RegionBase(1 - (xp - d)/le, 1, None, None, x_val)
         elif (i, j) == (1, 1):
-            r = rg.RegionBase(0, (xp - d)/le, None, None)
+            r = rg.RegionBase(0, (xp - d)/le, None, None, x_val)
         return r
     else:
         a = d[i, j]
@@ -74,32 +74,32 @@ def get_L(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
         xp = theta(a, b, x_val)
         if (i, j) == (0, 0):
             r = rg.RegionBase(
-                    mmax(0,(2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
-                    mmin(p1, (xp - d[i, j])/le), 
+                    max(0,(2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
+                    min(p1, (xp - d[i, j])/le), 
                     #Max(0,(2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
                     #Min(p1, (xp - d[i, j])/le), 
-                    None, None, bd=(True, False))
+                    None, None, x_val, bd=(True, False))
         elif (i, j) == (0, 1):
             r = rg.RegionBase(
-                    mmax(0, (2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
-                    mmin(p2, (xp - d[i, j])/le), 
+                    max(0, (2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
+                    min(p2, (xp - d[i, j])/le), 
                     #Max(0, (2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
                     #Min(p2, (xp - d[i, j])/le), 
-                    None, None, bd=(True, False))
+                    None, None, x_val, bd=(True, False))
         elif (i, j) == (1, 0):
             r = rg.RegionBase(
-                    mmax(p1, (- xp + d[i, j] + le)/le), 
-                    mmin(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)), 
+                    max(p1, (- xp + d[i, j] + le)/le), 
+                    min(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)), 
                     #Max(p1, (- xp + d[i, j] + le)/le), 
                     #Min(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)), 
-                    None, None)
+                    None, None, x_val)
         elif (i, j) == (1, 1):
             r = rg.RegionBase(
-                    mmax(p2, (- xp + d[i, j] + le)/le), 
-                    mmin(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)),
+                    max(p2, (- xp + d[i, j] + le)/le), 
+                    min(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)),
                     #Max(p2, (- xp + d[i, j] + le)/le), 
                     #Min(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)),
-                    None, None)
+                    None, None, x_val)
         return r
 
 
@@ -124,3 +124,4 @@ def get_q(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
             q_func = lambda p: (x + le * p - d[i, j] - le) / lf
         else:
             q_func = lambda p: (- x - le * p + d[i, j] + le + lf) / lf
+        return q_func

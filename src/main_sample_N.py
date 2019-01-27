@@ -4,22 +4,25 @@ Stats = rt.Stats
 
 # module test switch
 switches = {
-        Stats.MOMENT: 1,
-        Stats.CDF: 1,
-        Stats.PDF: 0,
-        Stats.CMOMENT: 1,
-        Stats.CCDF: 1,
-        Stats.CPDF: 0
+        Stats.MOMENT: 0,
+        Stats.CDF: 0,
+        Stats.PDF: 1,
+        Stats.CMOMENT: 0,
+        Stats.CCDF: 0,
+        Stats.CPDF: 1
         }
 
 
 # graph file
-gname = 'g3'
+gname = 'g2'
 
 phi = rt.Phi('uniform', phi_pq=1)
 # phi_pq = 4 * p * q
 
 fls = rt.Formulas(gname, phi)
+
+# test values
+valLst = [-0.1, -0.01, -0.001, 0, 1, 2, 3, -1, 9, 9.5, 9.9, 10]
 
 # moments stats
 if switches[Stats.MOMENT] == 1:
@@ -34,6 +37,12 @@ if switches[Stats.CDF] == 1:
     vals = [0, 0.5, 1, 3, 5]
     for v in vals:
         print(cdf.eval(v))
+
+# pdf stats
+if switches[Stats.PDF] == 1:
+    pdf = fls.get_formula(Stats.PDF, symbolic=False)
+    for x_val in valLst:
+        print(x_val, '\t', pdf.eval(x_val))
 
 # conditional moments stats
 if switches[Stats.CMOMENT] == 1:
@@ -59,5 +68,13 @@ if switches[Stats.CCDF] == 1:
             for x in xs:
                 print(ccdf.eval(e, p, x))
 
+# conditional pdf stats
+if switches[Stats.CPDF] == 1:
+    cpdf = fls.get_formula(Stats.CPDF, symbolic=False)
+    e = ('1', '2')
+    #ps = [0]
+    ps = [0, 0.2, 0.4, 0.5, 0.8, 1]
+    x = 3
 
-
+    for p in ps:
+        print(cpdf.eval(e, p, x))
