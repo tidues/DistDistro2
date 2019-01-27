@@ -1,424 +1,390 @@
-from .enums import Stats
 from . import commonFuncs as cf
-from . import numericFuncs as nf
-from sympy import *
-from sympy.abc import p, q, x
-from .plot import plot1d
-from .serializedFormula import *
-import os
-import dill
+from . import basicInfo as bi
+from .pyprelude.Timer import Timer
+from .pyprelude.Progress import Progress
 from .pyprelude import EasyWriter as ew
+from .enums import Stats
+from sympy import symbols
+from sympy.abc import x, p, q
 
 
+# template for all region-wise operations
 class Formula:
     def __init__(self, g):
-        self.stat = None  # the formula type
-        self.g = g
-        self.fs = {}  # all formulas
-        self.N_fs = {}
-        self.mods = ['numpy', {'theta': nf.theta, 'eta': nf.eta, 'etal': nf.etal, 'etar': nf.etar, 'mmin': min, 'mmax': max}]  ## modules for lambdify
-        self.idx_num = 0  # dimension of indexes for self.fs
-        self.val_keys = None  # the symbols for values
-        self.plot_info = (None, x, -1, self.g.d_max + 1)  # plotting parameters
-        self.unikey = 'zero'
-        self.folder = './.formulas/'
+        self.g = None
+        self.stat = None
+        self.keys = None
+        self.idx_num = None
         self.resfolder = './results/'
-        self.fullsave = None
 
-    # evaluation
-    def eval(self,  *params, save=True):
-        # split params into keys and vals
-        keys, subval, vals = self.__split_input(*params)
-
-        # generate formula if nece
-        self.__gen_formula_wrapper(keys)
-
-        myf = self.get_N_fs(self.mkkey(keys))
-
-        # select formula then return the evaluation
-        res = self.__apply(myf, vals)
-        if save:
-            g = self.g
-            fname = self.resfolder + g.name + '_' + g.phi.name + '_' + str(self.stat) + '.dat'
-            val = str(params) + '\t' + str(res) + '\n'
-            ew.wFile(fname, val)
+    # set up the symbolic or numeric environment
+    def sym_num_env(self, symbolic):
+        self.symbolic = symbolic
+        g = self.g
+        if symbolic:
+            # assgin symbolic functions
+            from .Sregions import get_R, get_L, get_q
+            from .commonFuncs import eta, etal, etar
+            self.get_R = get_R
+            self.get_L = get_L
+            self.get_q = get_q
+            self.eta = eta
+            self.etal = etal
+            self.etar = etar
             
+            # assign symbolic phis
+            g.phi_p = g.phi.phi_p_S
+            g.phi_q = g.phi.phi_q_S
+            g.phi_pq = g.phi.phi_pq_S
+            g.phi_qcp = g.phi.phi_qcp_S
+        else:
+            # assgin symbolic functions
+            from .Nregions import get_R, get_L, get_q
+            from .numericFuncs import eta, etal, etar
+            self.get_R = get_R
+            self.get_L = get_L
+            self.get_q = get_q
+            self.eta = eta
+            self.etal = etal
+            self.etar = etar
+            
+            # assign symbolic phis
+            g.phi_p = g.phi.phi_p_N
+            g.phi_q = g.phi.phi_q_N
+            g.phi_pq = g.phi.phi_pq_N
+            g.phi_qcp = g.phi.phi_qcp_N
+
+    def cond_ep(self, g, k, e, p_val, x_val, alphas, prog):
+        res = 0
+        # get e related info
+        le = float(g.edges[e]['l'])
+        px = float(g.edges[e]['x'])
+        for f in g.edges():
+
+            prog.count()
+
+            # get f related info
+            lf = float(g.edges[f]['l'])
+            py = float(g.edges[f]['y'])
+            # get entry ef related info
+            d, p1, p2, q1, q2 = bi.entry_info(self.g, e, f, le, lf)
+
+            # get entry coeff
+            coeff = self.ef_coeff(px, py, lf)
+            ef_res = 0
+
+            for (i, j) in g.two2:
+                # get region related info
+                R = self.get_R(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val)
+                ef_res += self.region_op(g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas)
+
+            res += coeff * ef_res
         return res
-        # return self.__subs(self.fs[self.mkkey(keys)], subval)
 
-    # lambdify
-    def get_N_fs(self, keys):
+    def cond_region(self, k=None, e=None, p_val=None, x_val=None):
+        # generate extra params
+        alphas = None
+        if self.stat == Stats.MOMENT or self.stat == Stats.CMOMENT:
+            alphas = cf.A_curl(2, k)
 
-        if keys not in self.N_fs:
-            expr = self.fs[keys]
-            if self.val_keys is None:
-                self.N_fs[keys] = expr
-            elif len(self.val_keys) == 1:
-                self.N_fs[keys] = lambdify(self.val_keys[0], expr, modules=self.mods)
+        g = self.g
+        res = 0
+
+        # see progress
+        prog = Progress(g.number_of_edges() ** 2, response_time=10)
+
+        # treat conditional
+        if e is not None:
+            return self.cond_ep(g, k, e, p_val, x_val, alphas, prog)
+
+        for e in g.edges():
+            res += self.cond_ep(g, k, e, p_val, x_val, alphas, prog)
+        return res
+    
+    # combine results in e,f level
+    def ef_coeff(self, px, py, lf):
+        if self.stat == Stats.MOMENT:
+            coeff = 1
+        elif self.stat == Stats.CDF:
+            coeff = px * py
+        elif self.stat == Stats.PDF:
+            coeff = px * py / lf
+        elif self.stat == Stats.CMOMENT:
+            coeff = 1
+        elif self.stat == Stats.CCDF:
+            coeff = py
+        elif self.stat == Stats.CPDF:
+            coeff = py / lf
+        return coeff
+
+    # save result when evaluate
+    def save_res(self, keys, res):
+        g = self.g
+        fname = self.resfolder + g.name + '_' + g.phi.name + '_' + str(self.stat) + '.dat'
+        val = str(keys) + '\t' + str(res) + '\n'
+        ew.wFile(fname, val)
+
+    # make dict from input
+    def make_params(self, *params):
+        p_dict = {}
+        for idx, v in enumerate(params):
+            if idx < len(self.keys):
+                p_dict[self.keys[idx]] = v
             else:
-                self.N_fs[keys] = lambdify(self.val_keys, expr, modules=self.mods)
-        return self.N_fs[keys]
-
-    # output the formula
-    def formula(self, *params):
-        # split params into keys and vals
-        keys, subval, vals = self.__split_input(*params)
-        # generate formula if nece
-        self.__gen_formula_wrapper(keys)
-        return self.__subs(self.fs[self.mkkey(keys)], subval)
-
-    # input f_info = (f, var, lb, ub)
-    def plot(self, *params, step=0.01, save=True, show=False):
-        if self.stat != Stats.MOMENT:
-            if len(params) == 0:
-                self.gen_formula()
-                f = self.fs[self.unikey]
-            else:
-                # split params into keys and vals
-                keys, subval, vals = self.__split_input(*params)
-                self.__gen_formula_wrapper(keys)
-                f = self.__subs(self.fs[self.mkkey(keys)], subval)
-
-            var = self.plot_info[1]
-            lb = self.plot_info[2]
-            ub = self.plot_info[3]
-
-            f_lambda = lambdify(var, f, modules=self.mods)
-
-            if save:
-                g = self.g
-                figname = self.resfolder + g.name + '_' + g.phi.name + '_' + str(self.stat) + '_' + str(params) + '.png'
-                plot1d(f_lambda, lb, ub, step, svname=figname, show=show)
-            else:
-                plot1d(f_lambda, lb, ub, step, show=show)
-
-        else:
-            print('moment function cannot be plotted.')
-
-    # save formula
-    def save_formulas(self):
-        sf = SFormula()
-        sf.stat = self.stat
-        sf.fs = self.fs
-        sf.N_fs = {}
-        for key in self.fs:
-            if key in self.N_fs:
-                sf.N_fs[key] = self.N_fs[key]
-            else:
-                sf.N_fs[key] = self.get_N_fs(key)
-        sf.mods = self.mods
-        sf.idx_num = self.idx_num
-        sf.val_keys = self.val_keys
-        sf.plot_info = self.plot_info
-        sf.unikey = self.unikey
-
-        # create folder
-        if not os.path.exists(self.folder):
-            os.makedirs(self.folder)
-
-        # pickle sf
-        dill.settings['recurse'] = True
-        dill.dump(sf, open(self.fullsave, 'wb'))
-
-        return sf
+                break
+        return p_dict
 
 
-    def __gen_formula_wrapper(self, keys):
-        if keys == self.unikey:
-            self.gen_formula()
-        else:
-            self.gen_formula(*keys)
-
-    def __apply(self, f, vals):
-        if len(vals) == 0:
-            return f
-        else:
-            return f(*vals)
-
-    def mkkey(self, keys):
-        if len(keys) == 1:
-            return keys[0]
-        else:
-            return keys
-
-    def __split_input(self, *params):
-        if self.idx_num == 0:
-            keys = self.unikey
-            vals = params
-        else:
-            keys = []
-            vals = []
-            for i, v in enumerate(params):
-                if i < self.idx_num:
-                    keys.append(v)
-                else:
-                    vals.append(v)
-            keys = tuple(keys)
-        
-        # make subs info
-        if len(vals) == 0:
-            subval = None
-        elif len(vals) == 1:
-            subval = [(self.val_keys[0], vals[0])]
-        else:
-            subval = list(zip(self.val_keys, vals))
-
-        vals = tuple(vals)
-
-        return (keys, subval, vals)
-
-    # return formula with subs
-    def __subs(self, formula, subval):
-        if subval is None:
-            return formula
-        else:
-            return formula.subs(subval)
-
-    # abstract method
-    def gen_formula(self):
-        # realized by the inherited classes
+    ### abstract methods
+    # operations in each region
+    def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas):
         pass
 
-    # make save name
-    def mksvname(self):
-        self.fullsave = self.folder + self.g.name + '_' + self.g.phi.name + '_' + str(self.stat) + '.sav'
 
-    
 class Moment(Formula):
-    def __init__(self, g):
+    def __init__(self, g, symbolic):
         super().__init__(g)
+        self.g = g
+        self.symbolic = symbolic
         self.stat = Stats.MOMENT
-        self.idx_num = 1
-        self.mksvname()
+        self.keys = ['k']
+        self.idx_num = -1
+        self.sym_num_env(symbolic)
 
-    def gen_formula(self, k):
-        if k in self.fs:
-            return False
+    def get_func(self, g, alpha):
+        if self.symbolic:
+            p, q = symbols('p,q')
+            func = q ** alpha[0] * p ** alpha[1] * g.phi_pq
+        else:
+            func = lambda q, p: q ** alpha[0] * p ** alpha[1] * g.phi_pq(q, p)
+        return func
 
-        print('calculating the ', k, 'th  moment...')
-
+    def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas):
         res = 0
-        alphas = cf.A_curl(2, k)
-        g = self.g
-        for e in g.edges():
-            for f in g.edges():
+        # get alpha related info
+        for alpha in alphas:
+            c0 = cf.ncrs(k, alpha) * px * py * lf ** alpha[0] * le ** alpha[1]
+            if e == f:
+                w = (i + j + 1) * alpha[0] + (i + j + 2) * alpha[1]
+                c1 = (-1) ** w * (i * (d + le)) ** (k - alpha[0] - alpha[1])
+            else:
+                w = j * alpha[0] + i * alpha[1]
+                c1 = (-1) ** w * (d[i, j] + i * le + j * lf) ** (k - alpha[0] - alpha[1])
+            c = c0 * c1
+            func = self.get_func(g, alpha)
 
-                for (i, j) in g.two2:
-                    ip = i + 1
-                    jp = j + 1
+            m = R.m(func)
 
-                    for alpha in alphas:
-                        # produce entry info
-                        if (e, f, i, j, alpha) not in g.moment_info:
-                            c0 = (g.gx[e] * g.gy[f] * g.l[f] ** alpha[0] * g.l[e] ** alpha[1])
-                            if e == f:
-                                w = (ip + jp -1) * alpha[0] + (ip + jp) * alpha[1]
-                                c1 = (-1) ** w
-                            else:
-                                w = j *  alpha[0] + i * alpha[1]
-                                c1 = (-1) ** w
+            res += c * m
+        return res
 
-                            c = c0 * c1
-                            # q = Symbol('q')
-                            # p = Symbol('p')
-                            expr = q ** alpha[0] * p ** alpha[1] * g.phi_pq
 
-                            m = g.R[e, f, i, j].m_num(expr)
-                            
-                            g.moment_info[e, f, i, j, alpha] = c * m
-
-                        # sum up
-                        if e == f:
-                            c2 = cf.ncrs(k, alpha) * (i * (g.d[e[0]][e[1]] + g.l[e])) ** (k - alpha[0] - alpha[1])
-                        else:
-                            c2 = cf.ncrs(k, alpha) * (g.d[e[i]][f[j]] + i * g.l[e] + j * g.l[f]) ** (k - alpha[0] - alpha[1])
-                        
-                        res += c2 * self.g.moment_info[e, f, i, j, alpha]
-                        
-        self.fs[k] = res
-        return True
-    
 class CDF(Formula):
-    def __init__(self, g):
+    def __init__(self, g, symbolic):
         super().__init__(g)
+        self.g = g
         self.stat = Stats.CDF
-        self.val_keys = (x,)
-        self.mksvname()
+        self.symbolic = symbolic
+        self.keys = ['x_val']
+        self.idx_num = 0
+        self.sym_num_env(symbolic)
 
-    def gen_formula(self):
-        if self.unikey in self.fs:
-            return False
+    def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas):
+        return R.m(g.phi_pq)
 
-        print('generating the cdf...')
-
-        g = self.g
-        # x = Symbol('x')
-        expr = 0
-
-        for e in g.edges():
-            for f in g.edges():
-                gxy = g.gx[e] * g.gy[f]
-                tmp = 0
-                for (i, j) in g.two2:
-                    tmp += g.Rx[e, f, i, j].m(g.phi_pq)
-
-                expr += gxy * tmp
-
-        self.fs[self.unikey] = expand(expr)
-        return True
 
 class PDF(Formula):
-    def __init__(self, g):
+    def __init__(self, g, symbolic):
         super().__init__(g)
+        self.g = g
         self.stat = Stats.PDF
-        self.val_keys = (x,)
-        self.mksvname()
+        self.symbolic = symbolic
+        self.keys = ['x_val']
+        self.idx_num = 0
 
-    def gen_formula(self):
-        if self.unikey in self.fs:
-            return False
+    def get_func(self, q_func, g):
+        if self.symbolic:
+            p, q = symbols('p,q')
+            func = g.phi_pq.subs(q, q_func)
+        else:
+            func = lambda p: g.phi_pq(q_func(p), p)
+        return func
 
-        print('generating the pdf...')
-        g = self.g
-        expr = 0
-
-        # mat_D = {}
-        for e in g.edges():
-            for f in g.edges():
-                const = g.gx[e] * g.gy[f] / g.l[f]
-                tmp = 0
-                # mxs = {}
-                for (i, j) in g.two2:
-                    c = cf.eta(g.a[e, f, i, j], g.b[e, f, i, j], x)
-                    phis = g.phi_pq.subs(q, g.q[e, f, i, j])
-                    m = g.L[e, f, i, j].m(phis)
-                    tmp += c * m
-
-                expr += const * tmp
-
-        # self.mat_D = mat_D
-        self.fs[self.unikey] = expand(expr)
-        return True
+    def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas):
+        c = eta(R.a_val, R.b_val, x_val)
+        L = self.get_L(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val)
+        q_func = self.get_q(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val)
+        phis = self.get_func(q_func, g)
+        m = L.m(phis)
+        return c * m
 
 
-###############################################################
-# Conditional Formulas
-###############################################################
 class CMoment(Formula):
-    def __init__(self, g):
+    def __init__(self, g, symbolic):
         super().__init__(g)
+        self.g = g
         self.stat = Stats.CMOMENT
+        self.symbolic = symbolic
+        self.keys = ['k', 'e', 'p_val']
         self.idx_num = 2
-        self.val_keys = (p,)
-        self.plot_info = (None, p, 0, 1)
-        self.mksvname()
+        self.sym_num_env(symbolic)
 
-    def gen_formula(self, k, e):
-        if (k, e) in self.fs:
-            return False
+    def get_func(self, g, p_val, alpha):
+        if self.symbolic:
+            p, q = symbols('p,q')
+            func = q ** alpha[0] * g.phi_qcp
+        else:
+            func = lambda q: q ** alpha[0] * g.phi_qcp(q, p_val)
+        return func
 
-        print('generating the conditional ', k, 'th moment function...')
+    def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas):
         res = 0
-        alphas = cf.A_curl(2, k)
-        g = self.g
-        for f in g.edges():
-            for (i, j) in g.two2:
-                ip = i + 1
-                jp = j + 1
-                
-                for alpha in alphas:
-                    # produce entry info
-                    c0 = (g.gy[f] * g.l[f] ** alpha[0] * g.l[e] ** alpha[1])
-                    if e == f:
-                        w = (ip + jp -1) * alpha[0] + (ip + jp) * alpha[1]
-                        c1 = (-1) ** w
-                    else:
-                        w = j *  alpha[0] + i * alpha[1]
-                        c1 = (-1) ** w
+        for alpha in alphas:
+            c0 = cf.ncrs(k, alpha) * py * lf ** alpha[0] * le ** alpha[1]
+            if e == f:
+                w = (i + j + 1) * alpha[0] + (i + j + 2) * alpha[1]
+                c1 = (-1) ** w * (i * (d + le)) ** (k - alpha[0] - alpha[1])
+            else:
+                w = j * alpha[0] + i * alpha[1]
+                c1 = (-1) ** w * (d[i, j] + i * le + j * lf) ** (k - alpha[0] - alpha[1])
+            c = c0 * c1 * p_val ** alpha[1]
 
-                    c = c0 * c1
-                    expr = q ** alpha[0] * (g.phi_pq / g.phi_p)
+            func = self.get_func(g, p_val, alpha)
 
-                    m = g.R[e, f, i, j].m_p(expr)
-                    tmpres = c * m * p ** alpha[1]
+            m = R.m_p(func, p_val)
+            res += c * m
 
-                    # sum up
-                    if e == f:
-                        c2 = cf.ncrs(k, alpha) * (i * (g.d[e[0]][e[1]] + g.l[e])) ** (k - alpha[0] - alpha[1])
-                    else:
-                        c2 = cf.ncrs(k, alpha) * (g.d[e[i]][f[j]] + i * g.l[e] + j * g.l[f]) ** (k - alpha[0] - alpha[1])
+        return res
 
-                    res += c2 * tmpres
-
-        self.fs[k, e] = expand(res)
-        return True
 
 class CCDF(Formula):
-    def __init__(self, g):
+    def __init__(self, g, symbolic):
         super().__init__(g)
+        self.g = g
         self.stat = Stats.CCDF
+        self.symbolic = symbolic
+        self.keys = ['e', 'p_val', 'x_val']
         self.idx_num = 1
-        self.val_keys = (p, x)
-        self.mksvname()
+        self.sym_num_env(symbolic)
 
-    def gen_formula(self, e):
-        if e in self.fs:
-            return False
+    def get_func(self, g, p_val):
+        if self.symbolic:
+            p, q = symbols('p,q')
+            func = g.phi_qcp
+        else:
+            func = lambda q: g.phi_qcp(q, p_val)
+        return func
 
-        print('generating the conditional cdf...')
-
-        g = self.g
-        expr = 0
-
-        for f in g.edges():
-            tmp = 0
-            for (i, j) in g.two2:
-                tmp += g.Rx[e, f, i, j].m_p(g.phi_pq / g.phi_p)
-
-            expr += g.gy[f]* tmp
-
-        self.fs[e] = expand(expr)
-        return True
-
+    def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas):
+        func = self.get_func(g, p_val)
+        return R.m_p(func, p_val)
 
 
 class CPDF(Formula):
-    def __init__(self, g):
+    def __init__(self, g, symbolic):
         super().__init__(g)
+        self.g = g
         self.stat = Stats.CPDF
+        self.symbolic = symbolic
+        self.keys = ['e', 'p_val', 'x_val']
         self.idx_num = 1
-        self.val_keys = (p, x)
-        self.mksvname()
+        self.sym_num_env(symbolic)
 
-    def gen_formula(self, e):
-        if e in self.fs:
-            return False
+    def get_func(self, g, q_func, p_val):
+        if self.symbolic:
+            p, q = symbols('p,q')
+            func = g.phi_qcp.subs(q, q_func)
+        else:
+            func = g.phi_qcp(q_func(p_val), p_val)
+        return func
 
-        print('generating the conditional pdf...')
+    def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas):
+        c0 = self.eta(R.a_val, R.b_val, x_val)
+        L = self.get_L(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val)
+        q_func = self.get_q(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val)
+        myeta = None
+        if L.bd[0] is False:
+            myeta = self.etal
+        elif L.bd[1] is False:
+            myeta = self.etar
+        else:
+            myeta = self.eta
+        c1 = myeta(L.pl, L.pu, p_val)
+        phis = self.get_func(g, q_func, p_val)
+        return c0 * c1 * m
 
+
+# the interface for numerical computation
+class Numeric:
+    # fl_cls is the formula class, e.g. Moment, CDF, CMoment, etc.
+    def __init__(self, g, fl_cls):
+        # gen formula
+        self.formula = fl_cls(g, False)
+
+    # evaluate value
+    def eval(self, *params, save=True):
+        p_dict = self.formula.make_params(*params)
+        res = self.formula.cond_region(**p_dict)
+        if save:
+            self.formula.save_res(params, res)
+
+
+# the interface for symbolic computation
+class Symbolic:
+    # fl_cls is the formula class, e.g. Moment, CDF, CMoment, etc.
+    def __init__(self, g, fl_cls):
+
+        # gen formula
+        self.formula = fl_cls(g, True)
+
+    # generate functions
+    def gen_formula(self):
+        pass
+
+    # plot formulas
+    def plot(self):
+        pass
+
+    # evaluate value
+    def eval(self):
+        pass
+
+    # save formulas
+    def save_formulas(self):
+        pass
+
+
+# the wrapper for getting formulas
+class Formulas:
+    # symbolic: use symbolic or numerical method, None is same as auto
+    def __init__(self, gname, phi, fpath='../data/', rational=False):
+        # read graph
+        self.g = bi.readGraph(fpath, gname)
+        # generate basic info
+        bi.basicInfo(self.g, phi, rational)
+        # dispatch map
+        self.fl = {
+                Stats.MOMENT: Moment,
+                Stats.CDF: CDF,
+                Stats.PDF: PDF,
+                Stats.CMOMENT: CMoment,
+                Stats.CCDF: CCDF,
+                Stats.CPDF: CPDF
+                }
+
+    # get different stats
+    def get_formula(self, stats, symbolic=None):
         g = self.g
-        expr = 0
+        if Stats.is_member(stats) is False:
+            raise Exception('stats must be value from the enum Stats')
 
-        for f in g.edges():
-            const = g.gy[f] / g.l[f]
-            tmp = 0
+        if symbolic is None:
+            if stats == Stats.MOMENT or stats == Stats.CMOMENT:
+                symbolic = False
+            else:
+                symbolic = True
 
-            for (i, j) in g.two2:
-                c0 = cf.eta(g.a[e, f, i, j], g.b[e, f, i, j], x)
-                rg = g.L[e, f, i, j].bases[0]
-                myeta = None
-                if rg.bd[0] is False:
-                    myeta = cf.etal
-                elif rg.bd[1] is False:
-                    myeta = cf.etar
-                else:
-                    myeta = cf.eta
-                c1 = myeta(rg.pl, rg.pu, p)
-                phis = (g.phi_pq / g.phi_p).subs(q, g.q[e, f, i, j])
-                tmp += c0 * c1 * phis
-
-            expr += const * tmp
-
-        self.fs[e] = expand(expr)
-        return True
-
+        if symbolic:
+            return Symbolic(g, self.fl[stats])
+        else:
+            return Numeric(g, self.fl[stats])

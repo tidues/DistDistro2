@@ -6,8 +6,10 @@ Stats = rt.Stats
 switches = {
         Stats.MOMENT: 1,
         Stats.CDF: 1,
+        Stats.PDF: 0,
         Stats.CMOMENT: 1,
-        Stats.CCDF: 1
+        Stats.CCDF: 1,
+        Stats.CPDF: 0
         }
 
 

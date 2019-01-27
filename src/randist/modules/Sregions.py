@@ -1,5 +1,7 @@
-from . import Nregion as rg
-from .numericFuncs import theta
+from . import region as rg
+from sympy import *
+from sympy.abc import x, p, q
+from .commonFuncs import theta, mmax, mmin
 
 def get_R(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
     # case e == f
@@ -8,21 +10,27 @@ def get_R(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
             a = 0
         else:
             a = d
-        b = (d + le)/2
         if x_val is None:
             x_val = b
+        b = (d + le)/2
         xp = theta(a, b, x_val)
         if (i, j) == (0, 0):
-            r = rg.RegionBase(0, 1, lambda p: max(0, p - xp/le), lambda p: p, x_val)
+            r1 = rg.RegionBase(0, xp/le, 0, p, x_val, bd=(True, False))
+            r2 = rg.RegionBase(xp/le, 1, p - xp/le, p, x_val)
+            R = rg.Region((r1,r2))
         elif (i, j) == (0, 1):
-            r = rg.RegionBase(0, 1, lambda p: p, lambda p: min(1, p + xp/le), x_val)
+            r1 = rg.RegionBase(0, 1 - xp/le, p, p + xp/le, x_val, bd=(True, False))
+            r2 = rg.RegionBase(1 - xp/le, 1, p, 1, x_val)
+            R = rg.Region((r1,r2))
         elif (i, j) == (1, 0):
-            r = rg.RegionBase(1 - (xp - d)/le, 1, lambda p: 0, lambda p: p - 1 + (xp - d)/le, x_val)
+            r1 = rg.RegionBase(1 - (xp - duv)/le, 1, 0, p - 1 + (xp - duv)/le, x_val)
+            R = rg.Region((r1,))
         else:
-            r = rg.RegionBase(0, (xp - d)/le,  lambda p: p + 1 - (xp - d)/le, lambda p: 1, x_val)
-        r.a_val = a
-        r.b_val = b
-        return r
+            r1 = rg.RegionBase(0, (xp - duv)/le,  p + 1 - (xp - duv)/le, 1, x_val)
+            R = rg.Region((r1,))
+        R.a_val = a
+        R.b_val = b
+        return R
     else:
         a = d[i, j]
         b = (le + lf + 
@@ -32,17 +40,28 @@ def get_R(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
             x_val = b
         xp = theta(a, b, x_val)
         if (i, j) == (0, 0):
-            r = rg.RegionBase(0, min(p1, (xp - d[i, j])/le), lambda p: 0, lambda p: min(q1, (xp - le * p - d[i, j])/lf), x_val, bd=(True, False))
+            r1 = rg.RegionBase(0, (xp - d[i, j])/le, 0, (xp - le * p - d[i, j])/lf, x_val)
+            r2 = rg.RegionBase(p1, (xp - d[i, j])/le, 0, (xp - le * p - d[i, j])/lf, x_val, sgn=-1, eta=True, a=le * p1 + d[i, j])
+            r3 = rg.RegionBase(0, (xp - lf * q1 - d[i, j])/le, q1, (xp - le * p - d[i, j])/lf, x_val, sgn=-1, eta=True, a=lf * q1 + d[i, j])
+            R = rg.Region((r1, r2, r3))
         elif (i, j) == (0, 1):
-            r = rg.RegionBase(0, min(p2, (xp - d[i, j])/le), lambda p: max(q1, (- xp + le * p + d[i, j] + lf)/lf), lambda p: 1, x_val, bd=(True, False))
+            r1 = rg.RegionBase(0, (xp - d[i, j])/le, (- xp + le * p + d[i, j] + lf)/lf, 1, x_val)
+            r2 = rg.RegionBase(p2, (xp - d[i, j])/le, (- xp + le * p + d[i, j] + lf)/lf, 1, x_val, sgn=-1, eta=True, a=le * p2 + d[i, j])
+            r3 = rg.RegionBase(0, (xp + lf * q1 - d[i, j] - lf)/le, (- xp + le * p + d[i, j] + lf)/lf, q1, x_val, sgn=-1, eta=True, a=(1 - q1) * lf + d[i,j])
+            R = rg.Region((r1, r2, r3))
         elif (i, j) == (1, 0):
-            r = rg.RegionBase(max(p1, (- xp + d[i, j] + le)/le), 1, lambda p: 0, lambda p: min(q2, (xp + le * p - d[i, j] - le)/lf), x_val)
+            r1 = rg.RegionBase((- xp + d[i, j] + le)/le, 1, 0, (xp + le * p - d[i, j] - le)/lf, x_val)
+            r2 = rg.RegionBase((- xp + d[i, j] + le)/le, p1, 0, (xp + le * p - d[i, j] - le)/lf, x_val, sgn=-1, eta=True, a=(1 - p1) * le + d[i,j], bd=(True, False))
+            r3 = rg.RegionBase((- xp + lf * q2 + d[i, j] + le)/le, 1, q2, (xp + le * p - d[i, j] - le)/lf, x_val, sgn=-1, eta=True, a=lf * q2 + d[i, j])
+            R = rg.Region((r1, r2, r3))
         else:
-            r = rg.RegionBase(max(p2, (- xp + d[i, j] + le)/le), 1, lambda p: max(q2, (- xp - le * p + d[i, j] + le + lf)/lf), lambda p: 1, x_val)
-        r.a_val = a
-        r.b_val = b
-        return r
-
+            r1 = rg.RegionBase((- xp + d[i, j] + le)/le, 1, (- xp - le * p + d[i, j] + le + lf)/lf, 1, x_val)
+            r2 = rg.RegionBase((- xp + d[i, j] + le)/le, p2, (- xp - le * p + d[i, j] + le + lf)/lf, 1, x_val, sgn=-1, eta=True, a=(1 - p2) * le + d[i,j], bd=(True, False))
+            r3 = rg.RegionBase((- xp - lf * q2 + d[i, j] + le + lf)/le, 1, (- xp - le * p + d[i, j] + le + lf)/lf, q2, x_val, sgn=-1, eta=True, a=(1 - q2) * lf + d[i,j])
+            R = rg.Region((r1, r2, r3))
+        R.a_val = a
+        R.b_val = b
+        return R
 
 # get L
 def get_L(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
@@ -60,9 +79,9 @@ def get_L(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
         elif (i, j) == (0, 1):
             r = rg.RegionBase(0, 1 - xp/le, None, None)
         elif (i, j) == (1, 0):
-            r = rg.RegionBase(1 - (xp - d)/le, 1, None, None)
+            r = rg.RegionBase(1 - (xp - duv)/le, 1, None, None)
         elif (i, j) == (1, 1):
-            r = rg.RegionBase(0, (xp - d)/le, None, None)
+            r = rg.RegionBase(0, (xp - duv)/le, None, None)
         return r
     else:
         a = d[i, j]
@@ -107,20 +126,20 @@ def get_q(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
     x = x_val
     if e == f:
         if (i, j) == (0, 0):
-            q_func = lambda p: p - x / le
+            q_func = p - x / le
         elif (i, j) == (0, 1):
-            q_func = lambda p: p + x / le
+            q_func = p + x / le
         elif (i, j) == (1, 0):
-            q_func = lambda p: p - 1 + (x - d) / le
+            q_func = p - 1 + (x - d) / le
         else:
-            q_func = lambda p: p + 1 - (x - d) / le
+            q_func = p + 1 - (x - d) / le
         return q_func
     else:
         if (i, j) == (0, 0):
-            q_func = lambda p: (x - le * p - d[i, j]) / lf
+            q_func = (x - le * p - d[i, j]) / lf
         elif (i, j) == (0, 1):
-            q_func = lambda p: (- x + le * p + d[i, j] + lf) / lf
+            q_func = (- x + le * p + d[i, j] + lf) / lf
         elif (i, j) == (1, 0):
-            q_func = lambda p: (x + le * p - d[i, j] - le) / lf
+            q_func = (x + le * p - d[i, j] - le) / lf
         else:
-            q_func = lambda p: (- x - le * p + d[i, j] + le + lf) / lf
+            q_func = (- x - le * p + d[i, j] + le + lf) / lf

@@ -12,7 +12,7 @@ class RegionBase:
     # bd: indicate whether the corresponding boundary 
     #     (just pl, pu for now) is included
     #       in the region
-    def __init__(self, pl, pu, ql, qu, sgn=1, eta=False, a=0, b=oo, xval=x, bd=(True, True)):
+    def __init__(self, pl, pu, ql, qu, xval, sgn=1, eta=False, a=0, b=oo, bd=(True, True)):
         self.pl = sympify(pl)
         self.pu = sympify(pu)
         if ql is not None:
