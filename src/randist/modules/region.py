@@ -139,7 +139,7 @@ class Region:
         return res
 
     # the conditional measure of this region
-    def m_p(self, f):
+    def m_p(self, f, p_val=None):
         res = 0
         for b in self.bases:
             res = res + b.m_p_adj(f)

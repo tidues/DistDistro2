@@ -84,13 +84,6 @@ class mmax(Function):
             else:
                 return b
 
-# get unique representation of an edge
-def e_repr(e):
-    if e[0]<e[1]:
-        return e
-    else:
-        return (e[1], e[0])
-
 # return ordered set for B_curl(a,b)
 # where a is the dimension of the tuple, and k is the sum
 def B_curl(n, k):

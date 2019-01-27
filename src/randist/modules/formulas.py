@@ -1,20 +1,27 @@
 from . import commonFuncs as cf
+from . import numericFuncs as nf
 from . import basicInfo as bi
 from .pyprelude.Timer import Timer
 from .pyprelude.Progress import Progress
 from .pyprelude import EasyWriter as ew
 from .enums import Stats
-from sympy import symbols
+from sympy import symbols, lambdify
 from sympy.abc import x, p, q
+from .serializedFormula import *
+from .plot import plot1d
+import os
+import dill
 
 
 # template for all region-wise operations
 class Formula:
     def __init__(self, g):
-        self.g = None
+        self.g = g
         self.stat = None
         self.keys = None
-        self.idx_num = None
+        self.unikey = None
+        self.idx_num = 0
+        self.val_keys = None
         self.resfolder = './results/'
 
     # set up the symbolic or numeric environment
@@ -37,6 +44,16 @@ class Formula:
             g.phi_q = g.phi.phi_q_S
             g.phi_pq = g.phi.phi_pq_S
             g.phi_qcp = g.phi.phi_qcp_S
+
+            # set extra properties
+            self.fs = {} # all formulas
+            self.N_fs = {} # all numeric formulas
+            self.unikey = 'zero'
+            self.mods = ['numpy', {'theta': nf.theta, 'eta': nf.eta, 'etal': nf.etal, 'etar': nf.etar, 'mmin': min, 'mmax': max}]  ## modules for lambdify
+            self.plot_info = [None, x, -1, None]  # plotting parameters
+            self.folder = './.formulas/'
+            self.mksvname()
+
         else:
             # assgin symbolic functions
             from .Nregions import get_R, get_L, get_q
@@ -91,7 +108,7 @@ class Formula:
         res = 0
 
         # see progress
-        prog = Progress(g.number_of_edges() ** 2, response_time=10)
+        prog = Progress(g.number_of_edges() ** 2, response_time=60)
 
         # treat conditional
         if e is not None:
@@ -124,18 +141,47 @@ class Formula:
         val = str(keys) + '\t' + str(res) + '\n'
         ew.wFile(fname, val)
 
+    # make save name
+    def mksvname(self):
+        self.fullsave = self.folder + self.g.name + '_' + self.g.phi.name + '_' + str(self.stat) + '.sav'
+
     # make dict from input
     def make_params(self, *params):
         p_dict = {}
+        val_dict = {}
+        keys = []
+        vals = []
         for idx, v in enumerate(params):
             if idx < len(self.keys):
-                # use limits instead of undefined p value
                 if self.keys[idx] == 'p_val':
+                    # use limits instead of undefined p value
                     v = self.adj_p_val(v)
-                p_dict[self.keys[idx]] = v
+                    val_dict['p_val'] = v
+                    vals.append(v)
+                    if self.symbolic:
+                        p_dict['p_val'] = p
+                    else:
+                        p_dict['p_val'] = v
+                elif self.keys[idx] == 'x_val':
+                    val_dict['x_val'] = v
+                    vals.append(v)
+                    if self.symbolic:
+                        p_dict['x_val'] = x
+                    else:
+                        p_dict['x_val'] = v
+                else:
+                    keys.append(v)
+                    p_dict[self.keys[idx]] = v
             else:
                 break
-        return p_dict
+
+        if keys == []:
+            keys = [self.unikey]
+
+        keys = tuple(keys)
+        vals = tuple(vals)
+
+        return p_dict, val_dict, keys, vals
 
     # use limit to replace undefined p
     def adj_p_val(self, p_val, eps=1e-7):
@@ -157,11 +203,11 @@ class Formula:
 class Moment(Formula):
     def __init__(self, g, symbolic):
         super().__init__(g)
-        self.g = g
+        self.g.moment_info = {}
         self.symbolic = symbolic
         self.stat = Stats.MOMENT
+        self.idx_num = 1
         self.keys = ['k']
-        self.idx_num = -1
         self.sym_num_env(symbolic)
 
     def get_func(self, g, alpha):
@@ -176,30 +222,36 @@ class Moment(Formula):
         res = 0
         # get alpha related info
         for alpha in alphas:
-            c0 = cf.ncrs(k, alpha) * px * py * lf ** alpha[0] * le ** alpha[1]
+            if (e, f, i, j, alpha) not in g.moment_info:
+                c0 = px * py * lf ** alpha[0] * le ** alpha[1]
+                if e == f:
+                    w = (i + j + 1) * alpha[0] + (i + j + 2) * alpha[1]
+                    c1 = (-1) ** w 
+                else:
+                    w = j * alpha[0] + i * alpha[1]
+                    c1 = (-1) ** w 
+                c = c0 * c1
+                func = self.get_func(g, alpha)
+
+                m = R.m(func)
+                g.moment_info[e, f, i, j, alpha] = c * m
+
             if e == f:
-                w = (i + j + 1) * alpha[0] + (i + j + 2) * alpha[1]
-                c1 = (-1) ** w * (i * (d + le)) ** (k - alpha[0] - alpha[1])
+                c2 = cf.ncrs(k, alpha) * (i * (d + le)) ** (k - alpha[0] - alpha[1])
             else:
-                w = j * alpha[0] + i * alpha[1]
-                c1 = (-1) ** w * (d[i, j] + i * le + j * lf) ** (k - alpha[0] - alpha[1])
-            c = c0 * c1
-            func = self.get_func(g, alpha)
+                c2 = cf.ncrs(k, alpha) * (d[i, j] + i * le + j * lf) ** (k - alpha[0] - alpha[1])
 
-            m = R.m(func)
-
-            res += c * m
+            res += c2 * g.moment_info[e, f, i, j, alpha]
         return res
 
 
 class CDF(Formula):
     def __init__(self, g, symbolic):
         super().__init__(g)
-        self.g = g
         self.stat = Stats.CDF
         self.symbolic = symbolic
         self.keys = ['x_val']
-        self.idx_num = 0
+        self.val_keys = (x,)
         self.sym_num_env(symbolic)
 
     def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas):
@@ -209,11 +261,10 @@ class CDF(Formula):
 class PDF(Formula):
     def __init__(self, g, symbolic):
         super().__init__(g)
-        self.g = g
         self.stat = Stats.PDF
         self.symbolic = symbolic
         self.keys = ['x_val']
-        self.idx_num = 0
+        self.val_keys = (x,)
         self.sym_num_env(symbolic)
 
     def get_func(self, q_func, g):
@@ -236,12 +287,13 @@ class PDF(Formula):
 class CMoment(Formula):
     def __init__(self, g, symbolic):
         super().__init__(g)
-        self.g = g
         self.stat = Stats.CMOMENT
         self.symbolic = symbolic
-        self.keys = ['k', 'e', 'p_val']
         self.idx_num = 2
+        self.keys = ['k', 'e', 'p_val']
+        self.val_keys = (p,)
         self.sym_num_env(symbolic)
+        self.plot_info = [None, p, 0, 1]
 
     def get_func(self, g, p_val, alpha):
         if self.symbolic:
@@ -274,11 +326,11 @@ class CMoment(Formula):
 class CCDF(Formula):
     def __init__(self, g, symbolic):
         super().__init__(g)
-        self.g = g
         self.stat = Stats.CCDF
         self.symbolic = symbolic
-        self.keys = ['e', 'p_val', 'x_val']
         self.idx_num = 1
+        self.keys = ['e', 'p_val', 'x_val']
+        self.val_keys = (p, x)
         self.sym_num_env(symbolic)
 
     def get_func(self, g, p_val):
@@ -297,11 +349,11 @@ class CCDF(Formula):
 class CPDF(Formula):
     def __init__(self, g, symbolic):
         super().__init__(g)
-        self.g = g
         self.stat = Stats.CPDF
         self.symbolic = symbolic
-        self.keys = ['e', 'p_val', 'x_val']
         self.idx_num = 1
+        self.keys = ['e', 'p_val', 'x_val']
+        self.val_keys = (p, x)
         self.sym_num_env(symbolic)
 
     def get_func(self, g, q_func, p_val):
@@ -333,14 +385,15 @@ class Numeric:
     # fl_cls is the formula class, e.g. Moment, CDF, CMoment, etc.
     def __init__(self, g, fl_cls):
         # gen formula
-        self.formula = fl_cls(g, False)
+        self.fm = fl_cls(g, False)
 
     # evaluate value
     def eval(self, *params, save=True):
-        p_dict = self.formula.make_params(*params)
-        res = self.formula.cond_region(**p_dict)
+        fm = self.fm
+        p_dict, v_dict, keys, vals = fm.make_params(*params)
+        res = fm.cond_region(**p_dict)
         if save:
-            self.formula.save_res(params, res)
+            fm.save_res(params, res)
         return res
 
 
@@ -350,24 +403,113 @@ class Symbolic:
     def __init__(self, g, fl_cls):
 
         # gen formula
-        self.formula = fl_cls(g, True)
+        self.fm = fl_cls(g, True)
 
     # generate functions
-    def gen_formula(self):
-        pass
+    def gen_formula(self, *params):
+        fm = self.fm
+        p_dict, v_dict, keys, vals = fm.make_params(*params)
+        p_dict = self.add_default_var(p_dict)
+        if keys not in fm.fs:
+            expr = fm.cond_region(**p_dict)
+            if fm.plot_info[3] is None:
+                fm.plot_info[3] = fm.g.d_max + 1
+            fm.fs[keys] = expr
+            if fm.val_keys is None:
+                fm.N_fs[keys] = expr
+            else:
+                fm.N_fs[keys] = lambdify(fm.val_keys, expr, modules=fm.mods)
+        return v_dict, keys, vals, fm.fs[keys], fm.N_fs[keys]
+
+    # add default
+    def add_default_var(self, p_dict):
+        fm = self.fm
+        if 'x_val' in fm.keys and 'x_val' not in p_dict:
+            p_dict['x_val'] = x
+        if 'p_val' in fm.keys and 'p_val' not in p_dict:
+            p_dict['p_val'] = p
+        return p_dict
 
     # plot formulas
-    def plot(self):
-        pass
+    def plot(self, *params, step=0.01, save=True, show=False):
+        fm = self.fm
+        if fm.stat == Stats.MOMENT:
+            return 0
+
+        v_dict, keys, vals, f, N_f = self.gen_formula(*params)
+        my_f = self.partial_apply(v_dict, f)
+
+        var = fm.plot_info[1]
+        lb = fm.plot_info[2]
+        ub = fm.plot_info[3]
+
+        f_lambda = lambdify(var, my_f, modules=fm.mods)
+
+        if save:
+            g = fm.g
+            figname = fm.resfolder + g.name + '_' + g.phi.name + '_' + str(fm.stat) + '_' + str(params) + '.png'
+            plot1d(f_lambda, lb, ub, step, svname=figname, show=show)
+        else:
+            plot1d(f_lambda, lb, ub, step, show=show)
 
     # evaluate value
-    def eval(self):
-        pass
+    def eval(self, *params, save=True):
+        fm = self.fm
+        v_dict, keys, vals, f, N_f = self.gen_formula(*params)
+        if len(vals) == 0:
+            res = N_f
+        else:
+            res = N_f(*vals)
+        if save:
+            fm.save_res(params, res)
+        return res
+
+    # make sublist
+    def make_sub_lst(self, v_dict):
+        subval = []
+        if 'x_val' in v_dict:
+            subval.append((x, v_dict['x_val']))
+
+        if 'p_val' in v_dict:
+            subval.append((p, v_dict['p_val']))
+        return subval
+
+    # print formula
+    def formula(self, *params):
+        fm = self.fm
+        v_dict, keys, vals, f, N_f = self.gen_formula(*params)
+        return self.partial_apply(v_dict, f)
+
+    # partial apply
+    def partial_apply(self, v_dict, f):
+        subval = self.make_sub_lst(v_dict)
+        if len(subval) == 0:
+            return f
+        else:
+            return f.subs(subval)
 
     # save formulas
     def save_formulas(self):
-        pass
+        fm = self.fm
+        sf = SFormula()
+        sf.stat = fm.stat
+        sf.fs = fm.fs
+        sf.N_fs = fm.N_fs
+        sf.mods = fm.mods
+        sf.idx_num = fm.idx_num
+        sf.val_keys = fm.val_keys
+        sf.plot_info = fm.plot_info
+        sf.unikey = fm.unikey
 
+        # create folder
+        if not os.path.exists(fm.folder):
+            os.makedirs(fm.folder)
+
+        # pickle sf
+        dill.settings['recurse'] = True
+        dill.dump(sf, open(fm.fullsave, 'wb'))
+
+        return sf
 
 # the wrapper for getting formulas
 class Formulas:

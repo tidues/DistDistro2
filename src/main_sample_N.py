@@ -1,23 +1,25 @@
 import randist as rt
+from sympy.abc import p, q
 # from commonFuncs import gcheck
 Stats = rt.Stats
 
 # module test switch
 switches = {
-        Stats.MOMENT: 0,
-        Stats.CDF: 0,
+        Stats.MOMENT: 1,
+        Stats.CDF: 1,
         Stats.PDF: 1,
-        Stats.CMOMENT: 0,
-        Stats.CCDF: 0,
+        Stats.CMOMENT: 1,
+        Stats.CCDF: 1,
         Stats.CPDF: 1
         }
 
 
 # graph file
-gname = 'g2'
+gname = 'g0'
 
-phi = rt.Phi('uniform', phi_pq=1)
-# phi_pq = 4 * p * q
+#phi_pq = 4 * p * q
+phi_pq = 1
+phi = rt.Phi('uniform', phi_pq=phi_pq)
 
 fls = rt.Formulas(gname, phi)
 
@@ -76,5 +78,5 @@ if switches[Stats.CPDF] == 1:
     ps = [0, 0.2, 0.4, 0.5, 0.8, 1]
     x = 3
 
-    for p in ps:
-        print(cpdf.eval(e, p, x))
+    for p_val in ps:
+        print(cpdf.eval(e, p_val, x))

@@ -10,9 +10,9 @@ def get_R(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
             a = 0
         else:
             a = d
+        b = (d + le)/2
         if x_val is None:
             x_val = b
-        b = (d + le)/2
         xp = theta(a, b, x_val)
         if (i, j) == (0, 0):
             r1 = rg.RegionBase(0, xp/le, 0, p, x_val, bd=(True, False))
@@ -23,13 +23,15 @@ def get_R(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
             r2 = rg.RegionBase(1 - xp/le, 1, p, 1, x_val)
             R = rg.Region((r1,r2))
         elif (i, j) == (1, 0):
-            r1 = rg.RegionBase(1 - (xp - duv)/le, 1, 0, p - 1 + (xp - duv)/le, x_val)
+            r1 = rg.RegionBase(1 - (xp - d)/le, 1, 0, p - 1 + (xp - d)/le, x_val)
             R = rg.Region((r1,))
         else:
-            r1 = rg.RegionBase(0, (xp - duv)/le,  p + 1 - (xp - duv)/le, 1, x_val)
+            r1 = rg.RegionBase(0, (xp - d)/le,  p + 1 - (xp - d)/le, 1, x_val)
             R = rg.Region((r1,))
         R.a_val = a
         R.b_val = b
+        if b > g.d_max:
+            g.d_max = b
         return R
     else:
         a = d[i, j]
@@ -61,6 +63,8 @@ def get_R(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
             R = rg.Region((r1, r2, r3))
         R.a_val = a
         R.b_val = b
+        if b > g.d_max:
+            g.d_max = b
         return R
 
 # get L
@@ -75,13 +79,13 @@ def get_L(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
             x_val = b
         xp = theta(a, b, x_val)
         if (i, j) == (0, 0):
-            r = rg.RegionBase(xp/le, 1, None, None)
+            r = rg.RegionBase(xp/le, 1, None, None, x_val)
         elif (i, j) == (0, 1):
-            r = rg.RegionBase(0, 1 - xp/le, None, None)
+            r = rg.RegionBase(0, 1 - xp/le, None, None, x_val)
         elif (i, j) == (1, 0):
-            r = rg.RegionBase(1 - (xp - duv)/le, 1, None, None)
+            r = rg.RegionBase(1 - (xp - d)/le, 1, None, None, x_val)
         elif (i, j) == (1, 1):
-            r = rg.RegionBase(0, (xp - duv)/le, None, None)
+            r = rg.RegionBase(0, (xp - d)/le, None, None, x_val)
         return r
     else:
         a = d[i, j]
@@ -97,28 +101,28 @@ def get_L(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
                     mmin(p1, (xp - d[i, j])/le), 
                     #Max(0,(2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
                     #Min(p1, (xp - d[i, j])/le), 
-                    None, None, bd=(True, False))
+                    None, None, x_val, bd=(True, False))
         elif (i, j) == (0, 1):
             r = rg.RegionBase(
                     mmax(0, (2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
                     mmin(p2, (xp - d[i, j])/le), 
                     #Max(0, (2 * xp - d[0, 0] - d[0, 1] - lf)/(2 * le)), 
                     #Min(p2, (xp - d[i, j])/le), 
-                    None, None, bd=(True, False))
+                    None, None, x_val, bd=(True, False))
         elif (i, j) == (1, 0):
             r = rg.RegionBase(
                     mmax(p1, (- xp + d[i, j] + le)/le), 
                     mmin(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)), 
                     #Max(p1, (- xp + d[i, j] + le)/le), 
                     #Min(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)), 
-                    None, None)
+                    None, None, x_val)
         elif (i, j) == (1, 1):
             r = rg.RegionBase(
                     mmax(p2, (- xp + d[i, j] + le)/le), 
                     mmin(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)),
                     #Max(p2, (- xp + d[i, j] + le)/le), 
                     #Min(1, (- 2 * xp + d[1, 0] + d[1, 1] + 2* le + lf)/(2 * le)),
-                    None, None)
+                    None, None, x_val)
         return r
 
 
@@ -143,3 +147,4 @@ def get_q(g, e, f, i, j, le, lf, d, p1, p2, q1, q2, x_val):
             q_func = (x + le * p - d[i, j] - le) / lf
         else:
             q_func = (- x - le * p + d[i, j] + le + lf) / lf
+        return q_func

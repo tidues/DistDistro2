@@ -8,7 +8,7 @@ pdf_check = rt.pdf_check
 
 # module test switch
 switches = {
-        Stats.MOMENT: 0,
+        Stats.MOMENT: 1,
         Stats.CDF: 1,
         Stats.PDF: 1,
         Stats.CMOMENT: 1,
@@ -29,9 +29,9 @@ if switches[Stats.SAVE] == 1:
     cdf.plot()
 
 # graph file
-gname = 'g3'
-phi = rt.Phi('uniform', phi_pq=1)
-# phi_pq = 4 * p * q
+gname = 'g0'
+phi_pq = 1
+phi = rt.Phi('uniform', phi_pq=phi_pq)
 
 # formulas class
 fls = rt.Formulas(gname, phi)
@@ -47,29 +47,29 @@ if switches[Stats.SIMULATION] == 1:
 # moments stats
 if switches[Stats.MOMENT] == 1:
     moment = fls.get_formula(Stats.MOMENT, symbolic=True)
-    vals = [0, 1, 2, 3]
+    vals = [0, 1, 2]
     for v in vals:
-        print(moment.eval(v, save=True))
+        print(moment.eval(v))
 
 # cdf stats
 if switches[Stats.CDF] == 1:
     cdf = fls.get_formula(Stats.CDF)
     vals = [0, 0.5, 1, 3, 5]
     for v in vals:
-        print(cdf.eval(v, save=True))
+        print(cdf.eval(v))
     cdf.formula()
-    cdf.plot()
-    cdf.save()
+    cdf.plot(show=True)
+    cdf.save_formulas()
     mcdf = load_formulas(gname, phi.name, Stats.CDF)
-    cdf.plot()
+    cdf.plot(show=True)
     
 
 # pdf stats
 if switches[Stats.PDF] == 1:
     pdf = fls.get_formula(Stats.PDF)
     f = pdf.formula()
-    print(pdf_check(f, (x, 0, 12)))
-    pdf.plot()
+    #print(pdf_check(f, (x, 0, 12)))
+    pdf.plot(show=True)
     for x_val in valLst:
         print(x_val, '\t', pdf.eval(x_val))
 
@@ -83,11 +83,11 @@ if switches[Stats.CMOMENT] == 1:
     for k in ks:
         for e in es:
             for p in ps:
-                print(cmoment.eval(k, e, p, save=True))
+                print(cmoment.eval(k, e, p))
 
-    cmoment.plot(0, ('1', '2'))
-    cmoment.plot(1, ('1', '2'))
-    cmoment.plot(2, ('1', '2'))
+    cmoment.plot(0, ('1', '2'), show=True)
+    cmoment.plot(1, ('1', '2'), show=True)
+    cmoment.plot(2, ('1', '2'), show=True)
 
 
 # conditional cdf
@@ -102,24 +102,23 @@ if switches[Stats.CCDF] == 1:
             for x in xs:
                 print(ccdf.eval(e, p, x))
     e = ('1', '2')
-    f = ('2', '3')
-    ccdf.plot(e, 0)
-    ccdf.plot(e, 0.2)
-    ccdf.plot(e, 0.4)
-    ccdf.plot(e, 0.5)
-    ccdf.plot(e, 0.8)
-    ccdf.plot(e, 1)
+    ccdf.plot(e, 0, show=True)
+    ccdf.plot(e, 0.2, show=True)
+    ccdf.plot(e, 0.4, show=True)
+    ccdf.plot(e, 0.5, show=True)
+    ccdf.plot(e, 0.8, show=True)
+    ccdf.plot(e, 1, show=True)
 
 # conditional pdf
 if switches[Stats.CPDF] == 1:
-    e = ('1', '2')
-    f = ('2', '3')
     cpdf = fls.get_formula(Stats.CPDF)
-    plst = [0, 0.2, 0.4, 0.5, 0.8, 1]
+    e = ('1', '2')
+    ps = [0, 0.2, 0.4, 0.5, 0.8, 1]
     x = 3
-    for p in plst:
-        print(cpdf.eval(e, p, x, save=True))
-        cpdf.plot(e, p)
+
+    for p in ps:
+        print(cpdf.eval(e, p, x))
+        cpdf.plot(e, p, show=True)
         #print(pdf_check(cpdf.formula(e, p), (x, 0, g.d_max)))
 
 
