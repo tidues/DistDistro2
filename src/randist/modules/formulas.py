@@ -9,13 +9,14 @@ from sympy import symbols, lambdify
 from sympy.abc import x, p, q
 from .serializedFormula import *
 from .plot import plot1d
+from .pyprelude.Memorization import memorize
 import os
 import dill
 
 
 # template for all region-wise operations
 class Formula:
-    def __init__(self, g):
+    def __init__(self, g, memorize):
         self.g = g
         self.stat = None
         self.keys = None
@@ -24,6 +25,8 @@ class Formula:
         self.val_keys = None
         self.resfolder = './results/'
         self.plot_info = [None, x, -0.1, None]  # plotting parameters
+        self.memo = memorize
+        self.memo_dict()
 
     # set up the symbolic or numeric environment
     def sym_num_env(self, symbolic):
@@ -71,6 +74,10 @@ class Formula:
             g.phi_pq = g.phi.phi_pq_N
             g.phi_qcp = g.phi.phi_qcp_N
 
+    def memo_dict(self):
+        self.dict_entry = {}
+        self.dict_coeff = {}
+
     def cond_ep(self, g, k, e, p_val, x_val, alphas, prog):
         res = 0
         # get e related info
@@ -84,10 +91,12 @@ class Formula:
             lf = float(g.edges[f]['l'])
             py = float(g.edges[f]['y'])
             # get entry ef related info
-            d, p1, p2, q1, q2 = bi.entry_info(self.g, e, f, le, lf)
+            d, p1, p2, q1, q2 = memorize(self.dict_entry, (e, f), bi.entry_info,(self.g, e, f, le, lf), on=self.memo)
+            #d, p1, p2, q1, q2 = bi.entry_info(self.g, e, f, le, lf)
 
             # get entry coeff
-            coeff = self.ef_coeff(px, py, lf)
+            coeff = memorize(self.dict_coeff, (e, f), self.ef_coeff, (px, py, lf), on=self.memo)
+            #coeff = self.ef_coeff(px, py, lf)
             ef_res = 0
 
             for (i, j) in g.two2:
@@ -207,8 +216,8 @@ class Formula:
 
 
 class Moment(Formula):
-    def __init__(self, g, symbolic):
-        super().__init__(g)
+    def __init__(self, g, symbolic, memorize):
+        super().__init__(g, memorize)
         self.g.moment_info = {}
         self.symbolic = symbolic
         self.stat = Stats.MOMENT
@@ -252,8 +261,8 @@ class Moment(Formula):
 
 
 class CDF(Formula):
-    def __init__(self, g, symbolic):
-        super().__init__(g)
+    def __init__(self, g, symbolic, memorize):
+        super().__init__(g, memorize)
         self.stat = Stats.CDF
         self.symbolic = symbolic
         self.keys = ['x_val']
@@ -266,8 +275,8 @@ class CDF(Formula):
 
 
 class PDF(Formula):
-    def __init__(self, g, symbolic):
-        super().__init__(g)
+    def __init__(self, g, symbolic, memorize):
+        super().__init__(g, memorize)
         self.stat = Stats.PDF
         self.symbolic = symbolic
         self.keys = ['x_val']
@@ -293,8 +302,8 @@ class PDF(Formula):
 
 
 class CMoment(Formula):
-    def __init__(self, g, symbolic):
-        super().__init__(g)
+    def __init__(self, g, symbolic, memorize):
+        super().__init__(g, memorize)
         self.stat = Stats.CMOMENT
         self.symbolic = symbolic
         self.idx_num = 2
@@ -333,8 +342,8 @@ class CMoment(Formula):
 
 
 class CCDF(Formula):
-    def __init__(self, g, symbolic):
-        super().__init__(g)
+    def __init__(self, g, symbolic, memorize):
+        super().__init__(g, memorize)
         self.stat = Stats.CCDF
         self.symbolic = symbolic
         self.idx_num = 1
@@ -357,8 +366,8 @@ class CCDF(Formula):
 
 
 class CPDF(Formula):
-    def __init__(self, g, symbolic):
-        super().__init__(g)
+    def __init__(self, g, symbolic, memorize):
+        super().__init__(g, memorize)
         self.stat = Stats.CPDF
         self.symbolic = symbolic
         self.idx_num = 1
@@ -393,9 +402,9 @@ class CPDF(Formula):
 # the interface for numerical computation
 class Numeric:
     # fl_cls is the formula class, e.g. Moment, CDF, CMoment, etc.
-    def __init__(self, g, fl_cls):
+    def __init__(self, g, fl_cls, memorize=False):
         # gen formula
-        self.fm = fl_cls(g, False)
+        self.fm = fl_cls(g, False, memorize=memorize)
 
     # evaluate value
     def eval(self, *params, save=True):
@@ -452,10 +461,10 @@ class Numeric:
 # the interface for symbolic computation
 class Symbolic:
     # fl_cls is the formula class, e.g. Moment, CDF, CMoment, etc.
-    def __init__(self, g, fl_cls):
+    def __init__(self, g, fl_cls, memorize=False):
 
         # gen formula
-        self.fm = fl_cls(g, True)
+        self.fm = fl_cls(g, True, memorize=memorize)
 
     # generate functions
     def gen_formula(self, *params):
@@ -566,8 +575,9 @@ class Symbolic:
 # the wrapper for getting formulas
 class Formulas:
     # symbolic: use symbolic or numerical method, None is same as auto
-    def __init__(self, gname, phi, fpath='../data/', rational=False, d_jit=False):
+    def __init__(self, gname, phi, fpath='../data/', rational=False, d_jit=False, memorize=False):
         self.d_jit = d_jit
+        self.memo = memorize
         # read graph
         self.g = bi.readGraph(fpath, gname)
         # generate basic info
@@ -601,6 +611,6 @@ class Formulas:
                 symbolic = True
 
         if symbolic:
-            return Symbolic(g, self.fl[stats])
+            return Symbolic(g, self.fl[stats], self.memo)
         else:
-            return Numeric(g, self.fl[stats])
+            return Numeric(g, self.fl[stats], self.memo)

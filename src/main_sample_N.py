@@ -24,7 +24,7 @@ phi_pq = 6 * q * (1 - q)
 #phi_pq = 1
 phi = rt.Phi('betaq', phi_pq=phi_pq)
 
-fls = rt.Formulas(gname, phi)
+fls = rt.Formulas(gname, phi, memorize=True)
 
 # test values
 valLst = [-0.1, -0.01, -0.001, 0, 1, 2, 3, -1, 9, 9.5, 9.9, 10]
