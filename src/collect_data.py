@@ -149,7 +149,8 @@ if switches['manhattonCondi'] == 1:
     met = (('6019', '6065'), 0.328)
     locs = [bull, empire, tmsq, bdy, met]
 
-    cmmtp = (ks, locs)
+    #cmmtp = (ks, locs)
+    cmmtp = False
     ccdfp = False
     cpdfp = locs
 

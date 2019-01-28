@@ -30,6 +30,16 @@ def basicInfo(g, phi, rational=False, d_jit=False):
     g.two2 = [(i, j) for i in g.two for j in g.two]
     end = time.time()
     
+    # get max edge length
+    g.max_l = 0
+    for e in g.edges():
+        if g.edges[e]['l'] > g.max_l:
+            g.max_l = g.edges[e]['l'] 
+
+    g.d_max = -1
+    g.dd_max = -1
+    g.de_max = {}
+
     g.d = {}
     if d_jit is False:
         get_d(g)
@@ -37,7 +47,8 @@ def basicInfo(g, phi, rational=False, d_jit=False):
     else:
         g.jit = True
 
-    g.d_max = 0
+
+
 
 # entry info
 def entry_info(g, e, f, le, lf):
@@ -85,14 +96,38 @@ def get_d(g, mye=None):
     if mye is None:
         print("loading all pairs shortest length...")
         g.d = dict(nx.shortest_path_length(g, weight = 'l'))
+        update_dd_max(g)
     else:
         print("loading shortest length to nodes of edge", str(mye)+"...")
         g.d[mye[0]] = nx.shortest_path_length(g, source=mye[0], weight='l')
         g.d[mye[1]] = nx.shortest_path_length(g, source=mye[1], weight='l')
+        update_dd_max(g, mye)
 
     # if g.rat:
     #     for i in g.nodes():
     #         for j in g.nodes():
     #             g.d[i][j] = rat(g.d[i][j], g.rat)
+
+# update d_max
+def update_dd_max(g, e=None):
+    if e is None:
+        if g.dd_max < 0:
+            for i in g.nodes():
+                for j in g.nodes():
+                    if i < j:
+                        if g.d[i][j] > g.dd_max:
+                            g.dd_max = g.d[i][j]
+            g.dd_max += g.max_l
+    else:
+        if e not in g.de_max:
+            de_max = 0
+            for j in g.d[e[0]]:
+                if g.d[e[0]][j] > de_max:
+                    de_max = g.d[e[0]][j]
+            g.de_max[e] = de_max + g.edges[e]['l']
+
+
+
+
 
 

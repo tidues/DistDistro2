@@ -1,7 +1,8 @@
 import time
 
 class Progress:
-    def __init__(self, total_iter, response_time = 60, on=True):
+    def __init__(self, total_iter, label='default', response_time = 60, on=True):
+        self.label = label
         self.tot = total_iter * 1.0
         self.rt = response_time
         self.cnt = 0
@@ -19,7 +20,7 @@ class Progress:
         else:
             end = time.time()
             if end - self.start > self.rt:
-                print('progress:\t%0.4f%%\ttime:\t%0.1fs' % (self.cnt/self.tot * 100, end - self.time0))
+                print(self.label, 'progress:\t%0.4f%%\ttime:\t%0.1fs' % (self.cnt/self.tot * 100, end - self.time0))
                 self.start = end
 
 

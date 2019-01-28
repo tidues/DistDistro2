@@ -1,5 +1,5 @@
 Current tasks:
-4. optimize the symbolic part
+5. test numerical plotting
 6. run and collect manhattan conditional stats
 7. run and collect manhattan unconditional exp and var
 8. create package, add readme

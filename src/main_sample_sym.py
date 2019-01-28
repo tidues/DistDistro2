@@ -8,16 +8,18 @@ pdf_check = rt.pdf_check
 
 # module test switch
 switches = {
-        Stats.MOMENT: 1,
+        Stats.MOMENT: 0,
         Stats.CDF: 1,
         Stats.PDF: 1,
-        Stats.CMOMENT: 1,
+        Stats.CMOMENT: 0,
         Stats.CCDF: 1,
         Stats.CPDF: 1,
         Stats.SIMULATION: 0,
         Stats.SAVE: 0,
         Stats.TIMING: 0
         }
+
+show_plot = False
 
 if switches[Stats.SAVE] == 1:
     moment = load_formulas(Stats.MOMENT)
@@ -31,7 +33,8 @@ if switches[Stats.SAVE] == 1:
 # graph file
 gname = 'g0'
 phi_pq = 1
-phi = rt.Phi('uniform', phi_pq=phi_pq)
+phi_pq = 6 * q * (1 - q)
+phi = rt.Phi('betaq', phi_pq=phi_pq)
 
 # formulas class
 fls = rt.Formulas(gname, phi)
@@ -54,24 +57,24 @@ if switches[Stats.MOMENT] == 1:
 # cdf stats
 if switches[Stats.CDF] == 1:
     cdf = fls.get_formula(Stats.CDF)
-    vals = [0, 0.5, 1, 3, 5]
-    for v in vals:
-        print(cdf.eval(v))
-    cdf.formula()
-    cdf.plot(show=True)
-    cdf.save_formulas()
-    mcdf = load_formulas(gname, phi.name, Stats.CDF)
-    cdf.plot(show=True)
+    #vals = [0, 0.5, 1, 3, 5]
+    #for v in vals:
+    #    print(cdf.eval(v))
+    #cdf.formula()
+    cdf.plot(show=show_plot)
+    #cdf.save_formulas()
+    #mcdf = load_formulas(gname, phi.name, Stats.CDF)
+    #cdf.plot(show=True)
     
 
 # pdf stats
 if switches[Stats.PDF] == 1:
     pdf = fls.get_formula(Stats.PDF)
-    f = pdf.formula()
+    #f = pdf.formula()
     #print(pdf_check(f, (x, 0, 12)))
-    pdf.plot(show=True)
-    for x_val in valLst:
-        print(x_val, '\t', pdf.eval(x_val))
+    pdf.plot(show=show_plot)
+    #for x_val in valLst:
+    #    print(x_val, '\t', pdf.eval(x_val))
 
 # conditional moments stats
 if switches[Stats.CMOMENT] == 1:
@@ -99,15 +102,16 @@ if switches[Stats.CCDF] == 1:
 
     for e in es:
         for p in ps:
-            for x in xs:
-                print(ccdf.eval(e, p, x))
-    e = ('1', '2')
-    ccdf.plot(e, 0, show=True)
-    ccdf.plot(e, 0.2, show=True)
-    ccdf.plot(e, 0.4, show=True)
-    ccdf.plot(e, 0.5, show=True)
-    ccdf.plot(e, 0.8, show=True)
-    ccdf.plot(e, 1, show=True)
+        #    for x in xs:
+        #        print(ccdf.eval(e, p, x))
+            ccdf.plot(e, p, show=show_plot)
+    #e = ('1', '2')
+    #ccdf.plot(e, 0, show=True)
+    #ccdf.plot(e, 0.2, show=True)
+    #ccdf.plot(e, 0.4, show=True)
+    #ccdf.plot(e, 0.5, show=True)
+    #ccdf.plot(e, 0.8, show=True)
+    #ccdf.plot(e, 1, show=True)
 
 # conditional pdf
 if switches[Stats.CPDF] == 1:
@@ -117,8 +121,8 @@ if switches[Stats.CPDF] == 1:
     x = 3
 
     for p in ps:
-        print(cpdf.eval(e, p, x))
-        cpdf.plot(e, p, show=True)
+        #print(cpdf.eval(e, p, x))
+        cpdf.plot(e, p, show=show_plot)
         #print(pdf_check(cpdf.formula(e, p), (x, 0, g.d_max)))
 
 

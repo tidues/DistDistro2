@@ -23,6 +23,7 @@ class Formula:
         self.idx_num = 0
         self.val_keys = None
         self.resfolder = './results/'
+        self.plot_info = [None, x, -0.1, None]  # plotting parameters
 
     # set up the symbolic or numeric environment
     def sym_num_env(self, symbolic):
@@ -50,7 +51,6 @@ class Formula:
             self.N_fs = {} # all numeric formulas
             self.unikey = 'zero'
             self.mods = ['numpy', {'theta': nf.theta, 'eta': nf.eta, 'etal': nf.etal, 'etar': nf.etar, 'mmin': min, 'mmax': max}]  ## modules for lambdify
-            self.plot_info = [None, x, -1, None]  # plotting parameters
             self.folder = './.formulas/'
             self.mksvname()
 
@@ -98,7 +98,7 @@ class Formula:
             res += coeff * ef_res
         return res
 
-    def cond_region(self, k=None, e=None, p_val=None, x_val=None):
+    def cond_region(self, k=None, e=None, p_val=None, x_val=None, show=True):
         # generate extra params
         alphas = None
         if self.stat == Stats.MOMENT or self.stat == Stats.CMOMENT:
@@ -107,14 +107,18 @@ class Formula:
         g = self.g
         res = 0
 
-        print('computing', g.name, g.phi.name, str(self.stat)+'...')
+        if show:
+            print('computing', g.name, g.phi.name, str(self.stat)+'...')
 
-        # see progress
-        prog = Progress(g.number_of_edges() ** 2, response_time=60)
 
         # treat conditional
         if e is not None:
+            # see progress
+            prog = Progress(g.number_of_edges(), label='computing', response_time=60)
             return self.cond_ep(g, k, e, p_val, x_val, alphas, prog)
+
+        # see progress
+        prog = Progress(g.number_of_edges() ** 2, response_time=60)
 
         for e in g.edges():
             res += self.cond_ep(g, k, e, p_val, x_val, alphas, prog)
@@ -255,6 +259,7 @@ class CDF(Formula):
         self.keys = ['x_val']
         self.val_keys = (x,)
         self.sym_num_env(symbolic)
+        self.stop_val = 1
 
     def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas):
         return R.m(g.phi_pq)
@@ -268,6 +273,7 @@ class PDF(Formula):
         self.keys = ['x_val']
         self.val_keys = (x,)
         self.sym_num_env(symbolic)
+        self.stop_val = 0
 
     def get_func(self, q_func, g):
         if self.symbolic:
@@ -296,6 +302,7 @@ class CMoment(Formula):
         self.val_keys = (p,)
         self.sym_num_env(symbolic)
         self.plot_info = [None, p, 0, 1]
+        self.stop_val = 0
 
     def get_func(self, g, p_val, alpha):
         if self.symbolic:
@@ -334,6 +341,7 @@ class CCDF(Formula):
         self.keys = ['e', 'p_val', 'x_val']
         self.val_keys = (p, x)
         self.sym_num_env(symbolic)
+        self.stop_val = 1
 
     def get_func(self, g, p_val):
         if self.symbolic:
@@ -357,10 +365,10 @@ class CPDF(Formula):
         self.keys = ['e', 'p_val', 'x_val']
         self.val_keys = (p, x)
         self.sym_num_env(symbolic)
+        self.stop_val = 0
 
     def get_func(self, g, q_func, p_val):
         if self.symbolic:
-            p, q = symbols('p,q')
             func = g.phi_qcp.subs(q, q_func)
         else:
             func = g.phi_qcp(q_func(p_val), p_val)
@@ -397,6 +405,48 @@ class Numeric:
         if save:
             fm.save_res(params, res)
         return res
+
+    # numerical plot
+    def plot(self, *params, pnts=1000, save=True, show=False):
+        fm = self.fm
+        if fm.stat == Stats.MOMENT:
+            return 0
+        p_dict, v_dict, keys, vals = fm.make_params(*params)
+        x_key = fm.keys[len(fm.keys)-1]
+
+        def f_lambda(x):
+            p_dict[x_key] = x
+            return fm.cond_region(show=False, **p_dict)
+        
+        var = fm.plot_info[1]
+        lb = fm.plot_info[2]
+        ub = fm.plot_info[3]
+
+        # get upper bound
+        if ub is None:
+            print('updating plotting bounds...')
+            if fm.g.d_max > 0:
+                ub = fm.g.d_max
+                adaptive = False
+            elif fm.g.jit and 'e' in fm.keys:
+                tmpe = p_dict['e']
+                bi.get_d_jit(fm.g, tmpe[0], tmpe[1], tmpe)
+                ub = fm.g.de_max[tmpe]
+                adaptive = True
+            else:
+                ub = fm.g.dd_max
+                adaptive = True
+
+        step = ub / float(pnts)
+        g = fm.g
+        print('plotting', g.name, g.phi.name, str(fm.stat)+'...')
+
+        if save:
+            g = fm.g
+            figname = fm.resfolder + g.name + '_' + g.phi.name + '_' + str(fm.stat) + '_' + str(params) + '.png'
+            plot1d(f_lambda, lb, ub, step, svname=figname, show=show, stop_val=fm.stop_val, adaptive=adaptive)
+        else:
+            plot1d(f_lambda, lb, ub, step, show=show, stop_val=fm.stop_val, adaptive=adaptive)
 
 
 # the interface for symbolic computation

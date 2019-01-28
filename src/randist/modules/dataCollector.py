@@ -41,7 +41,7 @@ def data_collector(gname, phi, mmtp=False, cdfp=False, pdfp=False, cmmtp=False, 
 
     # cpdf
     if cpdfp is not False:
-        cpdf = fls.get_formula(Stats.CPDF)
+        cpdf = fls.get_formula(Stats.CPDF, symbolic=False)
         for loc in cpdfp:
             cpdf.plot(*loc)
         cpdf.save_formulas()
