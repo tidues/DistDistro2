@@ -17,21 +17,37 @@ Stats = rt.Stats
 
 if switches['test'] == 1:
     # collection params
-    gname = 'g0'
+    #gname = 'g0'
+    #phi = rt.Phi('uniform', 1)
+    #mmtp = [1, 2, 3]
+    #cdfp = True
+    #pdfp = True
+    #loc1 = (('1', '2'), 0.2)
+    #loc2 = (('1', '3'), 0.5)
+    #loc3 = (('3', '4'), 0)
+    #locs = [loc1, loc2, loc3]
+    #cmmtp = (mmtp, locs)
+    #ccdfp = locs
+    #cpdfp = locs
+    #condi_e = ('1', '3')
+    gname = 'g3'
     phi = rt.Phi('uniform', 1)
-    mmtp = [1, 2, 3]
-    cdfp = True
-    pdfp = True
+    ks = [1, 2, 3]
+    mmtp = False
+    cdfp = False
+    pdfp = False
     loc1 = (('1', '2'), 0.2)
     loc2 = (('1', '3'), 0.5)
-    loc3 = (('3', '4'), 0)
+    loc3 = (('2', '3'), 0)
     locs = [loc1, loc2, loc3]
-    cmmtp = (mmtp, locs)
+    cmmtp = (ks, locs)
     ccdfp = locs
     cpdfp = locs
+    d_jit = False
+    #condi_e = ('1', '3')
 
     # collect data
-    rt.data_collector(gname, phi, mmtp, cdfp, pdfp, cmmtp, ccdfp, cpdfp)
+    rt.data_collector(gname, phi, mmtp, cdfp, pdfp, cmmtp, ccdfp, cpdfp, d_jit=d_jit)
 
 if switches['cycuni'] == 1:
     # collection params

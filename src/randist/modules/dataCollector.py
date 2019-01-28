@@ -4,8 +4,8 @@ from .enums import Stats
 # info_dict keys and values
 # moment: ks; cdf: nothing; pdf: nothing;
 # cmoment: (ks, locs); ccdf: locs; cpdf: locs
-def data_collector(gname, phi, mmtp=False, cdfp=False, pdfp=False, cmmtp=False, ccdfp=False, cpdfp=False):
-    fls = Formulas(gname, phi)
+def data_collector(gname, phi, mmtp=False, cdfp=False, pdfp=False, cmmtp=False, ccdfp=False, cpdfp=False, d_jit=False):
+    fls = Formulas(gname, phi, d_jit=d_jit)
 
     # moments
     if mmtp is not False:

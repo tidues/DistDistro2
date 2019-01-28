@@ -107,8 +107,10 @@ class Formula:
         g = self.g
         res = 0
 
+        print('computing', g.name, g.phi.name, str(self.stat)+'...')
+
         # see progress
-        prog = Progress(g.number_of_edges() ** 2, response_time=60)
+        prog = Progress(g.number_of_edges() ** 2, response_time=10)
 
         # treat conditional
         if e is not None:
@@ -514,11 +516,12 @@ class Symbolic:
 # the wrapper for getting formulas
 class Formulas:
     # symbolic: use symbolic or numerical method, None is same as auto
-    def __init__(self, gname, phi, fpath='../data/', rational=False):
+    def __init__(self, gname, phi, fpath='../data/', rational=False, d_jit=False):
+        self.d_jit = d_jit
         # read graph
         self.g = bi.readGraph(fpath, gname)
         # generate basic info
-        bi.basicInfo(self.g, phi, rational)
+        bi.basicInfo(self.g, phi, rational, d_jit)
         # dispatch map
         self.fl = {
                 Stats.MOMENT: Moment,
@@ -528,6 +531,12 @@ class Formulas:
                 Stats.CCDF: CCDF,
                 Stats.CPDF: CPDF
                 }
+        # conditional names
+        self.condi = [
+                Stats.CMOMENT,
+                Stats.CCDF,
+                Stats.CPDF
+                ]
 
     # get different stats
     def get_formula(self, stats, symbolic=None):
