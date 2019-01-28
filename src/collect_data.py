@@ -3,13 +3,13 @@ from sympy.abc import p, q
 
 # module test switch
 switches = {
-        'test': 1,
+        'test': 0,
         'cycuni': 0,
         'cycnuni': 0,
         'clinuni': 0,
         'griduni': 0,
         'gridnuni': 0,
-        'manhattonCondi': 0,
+        'manhattonCondi': 1,
         'manhattonUncondi': 0
         }
 
@@ -153,8 +153,10 @@ if switches['manhattonCondi'] == 1:
     ccdfp = False
     cpdfp = locs
 
+    d_jit = True
+
     # collect data
-    rt.data_collector(gname, phi, mmtp, cdfp, pdfp, cmmtp, ccdfp, cpdfp)
+    rt.data_collector(gname, phi, mmtp, cdfp, pdfp, cmmtp, ccdfp, cpdfp, d_jit=d_jit)
 
 if switches['manhattonUncondi'] == 1:
     # collection params

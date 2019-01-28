@@ -110,7 +110,7 @@ class Formula:
         print('computing', g.name, g.phi.name, str(self.stat)+'...')
 
         # see progress
-        prog = Progress(g.number_of_edges() ** 2, response_time=10)
+        prog = Progress(g.number_of_edges() ** 2, response_time=60)
 
         # treat conditional
         if e is not None:
