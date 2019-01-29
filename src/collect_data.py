@@ -3,14 +3,14 @@ from sympy.abc import p, q
 
 # module test switch
 switches = {
-        'test': 1,
+        'test': 0,
         'cycuni': 0,
         'cycnuni': 0,
         'clinuni': 0,
         'griduni': 0,
         'gridnuni': 0,
         'manhattonCondi': 0,
-        'manhattonUncondi': 0
+        'manhattonUncondi': 1
         }
 
 Stats = rt.Stats
@@ -170,7 +170,7 @@ if switches['manhattonUncondi'] == 1:
     gname = 'manhattan_cc'
     phi = rt.Phi('uniform', 1)
     ks = [1, 2]
-    mmtp = {'collect': True, 'valst': ks, 'symbolic': None}
+    mmtp = {'collect': True, 'symbolic': False, 'valst': ks}
     cdfp = False
     pdfp = False
     cmmtp = False
