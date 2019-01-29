@@ -6,10 +6,10 @@ Stats = rt.Stats
 
 # module test switch
 switches = {
-        Stats.MOMENT: 0,
+        Stats.MOMENT: 1,
         Stats.CDF: 1,
         Stats.PDF: 1,
-        Stats.CMOMENT: 0,
+        Stats.CMOMENT: 1,
         Stats.CCDF: 1,
         Stats.CPDF: 1
         }

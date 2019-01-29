@@ -8,10 +8,10 @@ pdf_check = rt.pdf_check
 
 # module test switch
 switches = {
-        Stats.MOMENT: 0,
-        Stats.CDF: 0,
+        Stats.MOMENT: 1,
+        Stats.CDF: 1,
         Stats.PDF: 1,
-        Stats.CMOMENT: 0,
+        Stats.CMOMENT: 1,
         Stats.CCDF: 1,
         Stats.CPDF: 1,
         Stats.SIMULATION: 0,
@@ -88,9 +88,9 @@ if switches[Stats.CMOMENT] == 1:
             for p in ps:
                 print(cmoment.eval(k, e, p))
 
-    cmoment.plot(0, ('1', '2'), show=True)
-    cmoment.plot(1, ('1', '2'), show=True)
-    cmoment.plot(2, ('1', '2'), show=True)
+    cmoment.plot(0, ('1', '2'), show=False)
+    cmoment.plot(1, ('1', '2'), show=False)
+    cmoment.plot(2, ('1', '2'), show=False)
 
 
 # conditional cdf

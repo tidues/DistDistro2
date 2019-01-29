@@ -22,8 +22,8 @@ def basicInfo(g, phi, rational=False, d_jit=False):
     if check_res['total'] is not True:
         raise Exception('Input did not pass all test: ', check_res)
 
-    g.moment_info = {}
-    g.cmoment_info = {}
+    # dicts for global memorization
+    g.dict_entry = {}
 
     # index set
     g.two = (0,1)

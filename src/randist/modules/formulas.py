@@ -75,7 +75,6 @@ class Formula:
             g.phi_qcp = g.phi.phi_qcp_N
 
     def memo_dict(self):
-        self.dict_entry = {}
         self.dict_coeff = {}
 
     def cond_ep(self, g, k, e, p_val, x_val, alphas, prog):
@@ -91,7 +90,7 @@ class Formula:
             lf = float(g.edges[f]['l'])
             py = float(g.edges[f]['y'])
             # get entry ef related info
-            d, p1, p2, q1, q2 = memorize(self.dict_entry, (e, f), bi.entry_info,(self.g, e, f, le, lf), on=self.memo)
+            d, p1, p2, q1, q2 = memorize(self.g.dict_entry, (e, f), bi.entry_info,(self.g, e, f, le, lf), on=self.memo)
             #d, p1, p2, q1, q2 = bi.entry_info(self.g, e, f, le, lf)
 
             # get entry coeff
@@ -218,7 +217,7 @@ class Formula:
 class Moment(Formula):
     def __init__(self, g, symbolic, memorize):
         super().__init__(g, memorize)
-        self.g.moment_info = {}
+        self.moment_info = {}
         self.symbolic = symbolic
         self.stat = Stats.MOMENT
         self.idx_num = 1
@@ -233,30 +232,52 @@ class Moment(Formula):
             func = lambda q, p: q ** alpha[0] * p ** alpha[1] * g.phi_pq(q, p)
         return func
 
+    def get_const(self, g, e, f, i, j, le, lf, px, py, R, alpha):
+        c0 = px * py * lf ** alpha[0] * le ** alpha[1]
+        if e == f:
+            w = (i + j + 1) * alpha[0] + (i + j + 2) * alpha[1]
+            c1 = (-1) ** w 
+        else:
+            w = j * alpha[0] + i * alpha[1]
+            c1 = (-1) ** w 
+        c = c0 * c1
+        func = self.get_func(g, alpha)
+
+        m = R.m(func)
+        return c * m
+
+
     def region_op(self, g, e, f, i, j, le, lf, px, py, d, p1, p2, q1, q2, R, p_val, x_val, k, alphas):
         res = 0
         # get alpha related info
         for alpha in alphas:
-            if (e, f, i, j, alpha) not in g.moment_info:
-                c0 = px * py * lf ** alpha[0] * le ** alpha[1]
-                if e == f:
-                    w = (i + j + 1) * alpha[0] + (i + j + 2) * alpha[1]
-                    c1 = (-1) ** w 
-                else:
-                    w = j * alpha[0] + i * alpha[1]
-                    c1 = (-1) ** w 
-                c = c0 * c1
-                func = self.get_func(g, alpha)
+            #if (e, f, i, j, alpha) not in g.moment_info:
+            #c0 = px * py * lf ** alpha[0] * le ** alpha[1]
+            #if e == f:
+            #    w = (i + j + 1) * alpha[0] + (i + j + 2) * alpha[1]
+            #    c1 = (-1) ** w 
+            #else:
+            #    w = j * alpha[0] + i * alpha[1]
+            #    c1 = (-1) ** w 
+            #c = c0 * c1
+            #func = self.get_func(g, alpha)
 
-                m = R.m(func)
-                g.moment_info[e, f, i, j, alpha] = c * m
+            #m = R.m(func)
+
+            const = memorize(
+                    self.moment_info, 
+                    (e, f, i, j, alpha), 
+                    self.get_const, 
+                    (g, e, f, i, j, le, lf, px, py, R, alpha),
+                    on=self.memo
+                    )
 
             if e == f:
                 c2 = cf.ncrs(k, alpha) * (i * (d + le)) ** (k - alpha[0] - alpha[1])
             else:
                 c2 = cf.ncrs(k, alpha) * (d[i, j] + i * le + j * lf) ** (k - alpha[0] - alpha[1])
 
-            res += c2 * g.moment_info[e, f, i, j, alpha]
+            res += c2 * const
         return res
 
 
@@ -445,6 +466,8 @@ class Numeric:
             else:
                 ub = fm.g.dd_max
                 adaptive = True
+        else:
+            adaptive = False
 
         step = ub / float(pnts)
         g = fm.g
