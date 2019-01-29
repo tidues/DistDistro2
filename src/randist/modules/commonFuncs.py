@@ -249,5 +249,3 @@ def gcheck(g, eps=1e-7):
             'total': (is_con and px_one and py_one)}
 
 
-
-

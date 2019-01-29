@@ -9,8 +9,8 @@ switches = {
         'clinuni': 0,
         'griduni': 0,
         'gridnuni': 0,
-        'manhattonCondi': 1,
-        'manhattonUncondi': 0
+        'manhattonCondi': 0,
+        'manhattonUncondi': 1
         }
 
 Stats = rt.Stats

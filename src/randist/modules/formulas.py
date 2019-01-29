@@ -575,7 +575,7 @@ class Symbolic:
 # the wrapper for getting formulas
 class Formulas:
     # symbolic: use symbolic or numerical method, None is same as auto
-    def __init__(self, gname, phi, fpath='../data/', rational=False, d_jit=False, memorize=False):
+    def __init__(self, gname, phi, fpath='../data/', rational=False, d_jit=False, memorize=True):
         self.d_jit = d_jit
         self.memo = memorize
         # read graph

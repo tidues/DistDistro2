@@ -9,7 +9,7 @@ pdf_check = rt.pdf_check
 # module test switch
 switches = {
         Stats.MOMENT: 0,
-        Stats.CDF: 1,
+        Stats.CDF: 0,
         Stats.PDF: 1,
         Stats.CMOMENT: 0,
         Stats.CCDF: 1,
