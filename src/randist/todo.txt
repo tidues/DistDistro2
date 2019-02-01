@@ -1,10 +1,6 @@
 Current tasks:
-5. test numerical plotting
-6. run and collect manhattan conditional stats
-7. run and collect manhattan unconditional exp and var
 8. create package, add readme
 
 Future functionalities:
-1. numerical PDF and CPDF
 2. separate g_xy and phi_pq, allow changing them in a graph
 3. interactive interface
