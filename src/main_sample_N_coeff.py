@@ -34,9 +34,9 @@ if switches[Stats.MOMENT] == 1:
     moment = fls.get_formula(Stats.MOMENT)
     vals = [0, 1, 2, 3]
     for v in vals:
-        print(moment.eval(v))
-        #print(moment.X_coeff(k_val=v))
-        #print(moment.Y_coeff(k_val=v))
+        #print(moment.eval(v))
+        print(moment.X_coeff(k_val=v))
+        print(moment.Y_coeff(k_val=v))
 
 # cdf stats
 if switches[Stats.CDF] == 1:
@@ -44,18 +44,18 @@ if switches[Stats.CDF] == 1:
     #vals = [0, 0.5, 1, 3, 5]
     #for v in vals:
     #    print(cdf.eval(v))
-    cdf.plot(show=show_plot)
-    #print(cdf.X_coeff(x_val=3))
-    #print(cdf.Y_coeff(x_val=3))
+    #cdf.plot(show=show_plot)
+    print(cdf.X_coeff(x_val=3))
+    print(cdf.Y_coeff(x_val=3))
 
 # pdf stats
 if switches[Stats.PDF] == 1:
     pdf = fls.get_formula(Stats.PDF, symbolic=False)
     #for x_val in valLst:
     #    print(x_val, '\t', pdf.eval(x_val))
-    pdf.plot(show=show_plot)
-    #print(pdf.X_coeff(x_val=3))
-    #print(cdf.Y_coeff(x_val=3))
+    #pdf.plot(show=show_plot)
+    print(pdf.X_coeff(x_val=3))
+    print(cdf.Y_coeff(x_val=3))
 
 # conditional moments stats
 if switches[Stats.CMOMENT] == 1:
@@ -68,8 +68,8 @@ if switches[Stats.CMOMENT] == 1:
         for e in es:
             for p in ps:
                 print(cmoment.eval(k, e, p))
-                #print(cmoment.Y_coeff_condi(e, p, k_val=k))
-            cmoment.plot(k, e, show=show_plot)
+                print(cmoment.Y_coeff_condi(e, p, k_val=k))
+            #cmoment.plot(k, e, show=show_plot)
 
 # conditional cdf stats
 if switches[Stats.CCDF] == 1:
@@ -81,9 +81,9 @@ if switches[Stats.CCDF] == 1:
     for e in es:
         for p in ps:
             for x in xs:
-                #print(ccdf.Y_coeff_condi(e, p, x_val=x))
-                print(ccdf.eval(e, p, x))
-            ccdf.plot(e, p, show=show_plot)
+                print(ccdf.Y_coeff_condi(e, p, x_val=x))
+    #            print(ccdf.eval(e, p, x))
+            #ccdf.plot(e, p, show=show_plot)
 
 # conditional pdf stats
 if switches[Stats.CPDF] == 1:
@@ -94,6 +94,6 @@ if switches[Stats.CPDF] == 1:
     x = 3
 
     for p in ps:
-        #print(cpdf.Y_coeff_condi(e, p, x_val=x))
-        print(cpdf.eval(e, p, x))
-        cpdf.plot(e, p, show=show_plot)
+        print(cpdf.Y_coeff_condi(e, p, x_val=x))
+        #print(cpdf.eval(e, p_val, x))
+        #cpdf.plot(e, p, show=show_plot)
